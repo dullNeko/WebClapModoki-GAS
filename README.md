@@ -92,7 +92,7 @@ GASでできないこと／問題点になりそうな所を挙げておきま�
   - なので、標準仕様では「Mastodonへのトゥート機能」は使えないように細工してあります。ご自身に責任が降りかかることを認識した上で、十分な注意を払っての使用をお願いいたします。
 - 「一日あたりの処理量」に制限があり、それらのほとんどは有償プランでも緩和されない
   - 処理量制限の詳細は [こちらのページ](https://developers.google.com/apps-script/guides/services/quotas) にある通りです。
-  - [WebClapModoki_GAS.txt](https://github.com/dullNeko/WebClapModoki_GAS/blob/main/WebClapModoki_GAS.txt) の冒頭、「★ 参考資料」セクション内「★ GAS全体の制限について」でも記述しましたが、結構厳しめの制限です。
+  - [WebClapModoki_GAS.txt](https://github.com/dullNeko/WebClapModoki_GAS/blob/main/WebClapModoki_GAS_v7.txt) の冒頭、「★ 参考資料」セクション内「★ GAS全体の制限について」でも記述しましたが、結構厳しめの制限です。
   - この制限のため、スクリプトを組む際には「セル参照を行う回数をできるだけ減らし、書き込み・読み出しは一括で行う」などのテクニックを使う必要性が高くなっています。
 - Google さんのサービスなので、唐突にサービス終了して使えなくなる可能性がある
   - 2009年から続いている古株サービスですし、利用者も少なくない（はず）ですし、何より Google のサービス全体を連携させて使うための仕組みなので、可能性は低め…とは思いますが…。
@@ -138,7 +138,7 @@ GitHubの練習がてら公開してみることにした次第です。
 1) __ご自身の Google ドライブ__ に、[このスプレッドシート](https://docs.google.com/spreadsheets/d/1j_h4weHihW-uVeTFtHTwrs6QwRPAT36sEBf3DPbo3ms/edit?usp=sharing)のコピーを作成してください。  
 Googleアカウントでログインしたブラウザ上で開けば、メニューの[ファイル]→[コピーを作成]で簡単にコピーできます。  
 また、名前（WebClapModoki (template) のコピー）は好きに変えて大丈夫です。  
-2) 同じくご自分の Google ドライブに、新規 Google Apps Script を作成し、[WebClapModoki.txt](https://github.com/dullNeko/WebClapModoki_GAS/blob/main/WebClapModoki_GAS.txt) の中身をコピペして上書き保存してください。  
+2) 同じくご自分の Google ドライブに、新規 Google Apps Script を作成し、[WebClapModoki.txt](https://github.com/dullNeko/WebClapModoki_GAS/blob/main/WebClapModoki_GAS_7.txt) の中身をコピペして上書き保存してください。  
 ※ 1. のスプレッドシート、2. の Google Apps Script の共有設定  
 （「右クリックメニュー」→「共有」→「一般的なアクセス」の設定値）は __「制限付き」でOK__ です。  
 これらのURLを公開する必要もありません。むしろ秘密にしておいて下さいまし。
