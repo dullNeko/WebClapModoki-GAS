@@ -129,44 +129,93 @@ GitHubの練習がてら公開してみることにした次第です。
 
 # 環境作成・設定方法、使い方の説明は？
 
-ここで画像付きで説明…してみようとして挫折したので、次の PDFファイル (詳細説明スライド) をご覧くださいまし…。
+ここで画像付きで説明…してみようとして挫折したので、  
+次の PDFファイル (詳細説明スライド) をご覧くださいまし…。
 
 [WebClapModoki_GAS 処理内容・導入手順の詳細説明スライド](https://)
 
-一応、文章での簡易説明は次の通りです。
+一応、文章での簡易説明も記述しておきます。
 
-1) __ご自身の Google ドライブ__ に、[このスプレッドシート](https://docs.google.com/spreadsheets/d/1j_h4weHihW-uVeTFtHTwrs6QwRPAT36sEBf3DPbo3ms/edit?usp=sharing)のコピーを作成してください。  
+<!-- 外部参照リンクの定義 -->
+[SS_template]: https://docs.google.com/spreadsheets/d/1j_h4weHihW-uVeTFtHTwrs6QwRPAT36sEBf3DPbo3ms/edit?usp=sharing
+[WebClapModoki_GAS]: /WebClapModoki_GAS_v7.txt
+[dic_wcm]: /dic_wcm.txt
+
+## 手順1.  
+__ご自身の Google ドライブ__ に、[このスプレッドシート](SS_template)のコピーを作成してください。  
 Googleアカウントでログインしたブラウザ上で開けば、メニューの[ファイル]→[コピーを作成]で簡単にコピーできます。  
-また、名前（WebClapModoki (template) のコピー）は好きに変えて大丈夫です。  
-2) 同じくご自分の Google ドライブに、新規 Google Apps Script を作成し、[WebClapModoki.txt](https://github.com/dullNeko/WebClapModoki_GAS/blob/main/WebClapModoki_GAS_v7.txt) の中身をコピペして上書き保存してください。  
-※ 1. のスプレッドシート、2. の Google Apps Script の共有設定  
+また、名前（WebClapModoki (template) のコピー）は好きに変えて大丈夫です。
+
+## 手順2.  
+同じくご自分の Google ドライブに「新規 Google Apps Script」を作成し、  
+[WebClapModoki.txt](WebClapModoki_GAS) の中身をコピペして、上書き保存してください。  
+
+【注意】  
+1.のスプレッドシート、2. の Google Apps Script の共有設定  
 （「右クリックメニュー」→「共有」→「一般的なアクセス」の設定値）は __「制限付き」でOK__ です。  
 これらのURLを公開する必要もありません。むしろ秘密にしておいて下さいまし。
-3) 1.でコピーしたスプレッドシートの 'id' （ブラウザで開いた時のURL、https://docs.google.com/spreadsheets/d/XXX...XXX/edit#gid=0 の XXX...XXX 部分）をコピーし、  
-2.の Google Apps Script 内の const SPREADSHEET_ID = 'XXX...XXX'; の XXX...XXX 部分を  
+
+## 手順3.
+1.でコピーしたスプレッドシートの 'id'、すなわち
+```
+（ブラウザで開いた時のURL）
+https://docs.google.com/spreadsheets/d/XXX...XXX/edit#gid=0
+```
+の __XXX...XXX__ をコピーし、
+2.の Google Apps Script 内の 
+```
+const SPREADSHEET_ID = 'XXX...XXX';
+```
+の __XXX...XXX__ を  
 ご自分のスプレッドシートの 'id' に書き換えて、上書き保存してください。
-4) 3.で修正した WebClapModoki の Google Apps Script を開き、  
+
+## 手順4.
+3.で修正した WebClapModoki の Google Apps Script を開き、  
 doPostTest 関数（動作テスト用関数）を実行してみてください。  
 特にエラーが出ず、実行ログに「お知らせ　実行完了」と表示されればOKです。  
+
 エラーが出た場合、  
-「3. で置換した 'id' の指定をミスっていないか」  
-「きちんと全体を過不足なくコピペできているか」あたりを見直してみるといいかもです。  
-※ 1.でコピーしたスプレッドシートの "posted_comment" シートの「コメント」列に「いいね！ 【NG】」が入力されているのは正常に動作した結果です。  
-使っていて「ちょっとこれは見たくないな…」という文字列が出てきたら、"NG_words_list" 上に行を追加して、単語を増やしたり書き換えたりしてみてください。
-5) 4.で問題がなければ WebClapModoki_GAS を __Webアプリとしてデプロイ__ し、  
+「3.で置換した 'id' の指定をミスっていないか」  
+「きちんと全体を過不足なくコピペできているか」あたりを見直してみるといいかもです。
+
+なお、  
+1.でコピーしたスプレッドシートの "posted_comment" シートの「コメント」列に、  
+「いいね！ 【NG】」が入力されているのは、正常動作です。  
+（checkContentTextByNGWordsList() 関数が仕事して、  
+　URLらしき文字列（http://www）を【NG】に置換した結果です）
+
+使っていて「ちょっとこれは見たくないな…」という文字列が出てきたら、  
+"NG_words_list" 上に行を追加して、単語を増やしたり書き換えたりしてみてください。 
+
+## 手順5.  
+4.で問題がなければ WebClapModoki_GAS を __Webアプリとしてデプロイ__ し、  
+```
 https://script.google.com/macros/s/YYY~YYY/exec  
+```
 形式のURLを取得してください。
-6) 5.で取得したURLを、 [dic_wcm.txt](https://github.com/dullNeko/WebClapModoki_GAS/blob/main/dic_wcm.txt) の中の  
+
+## 手順6.
+5.で取得したURLを [dic_wcm.txt](dic_wcm) の中の  
+```
 ＄WCM_URL	https://script.google.com/macros/s/YYY~YYY/exec  
+```
 に上書きして、ご自身のゴーストさんに実装してください。  
-※サンプルコードは里々での例ですが、  
+
+サンプルコードは里々での実装例ですが、  
 実体はさくらスクリプト  
+```
 \![execute,http-POST,（WCM_URL）,--param=message_body="（送信元）;（送信内容）;（メモ）",（オプション）]  
+```
 の実行なので、  
-別のSHIORIでも問題なく動くと思います。
-7) SSP 上で実行してみて、サンプルGIF画像のように、ご自身のスプレッドシートの "posted_comment" シートに POST した内容が追加されれば成功です。  
+特にSHIORIを選ばず動かせると思います。
+
+## 手順7.  
+SSP 上で実行してみて、サンプルGIF画像のように、  
+ご自身のスプレッドシートの "posted_comment" シートに POST した内容が追加されれば成功です。  
 お疲れ様でした！
-8) もし、使い始めてから微妙だなー、もう使うの止めたいなー、と思った時は、  
+
+## 使用を止めたい時は？
+もし、使い始めてから微妙だなー、もう使うの止めたいなー、と思った時は、  
 ゴーストさん側の記述（dic_wcm.txt）を削除した上で、  
 Google ドライブ上にある 2. の Google Apps Script のファイルを削除しちゃえばOKです。  
 
@@ -175,7 +224,7 @@ Google ドライブ上にある 2. の Google Apps Script のファイルを削�
 
 Pull Requests や Issues にコメントを投げて頂くのが、本来の運用方法…だと思うのですが、  
 「dullNeko が GitHub に不慣れで、使い方を理解できてない」状態なのと、  
-「GitHub アカウントを持ってない方もいらっしゃるかも…」と思ったので、  
+「GitHub アカウントを持ってない方もいらっしゃるはず…」と思ったので、  
 ↓の Google フォームを用意してみました。お気軽にどうぞ。
 
 https://docs.google.com/forms/d/e/1FAIpQLSflhEpY-kmYyDT87xbUyB0sqA88rkK9oxrXjGw0W2EcDHIg6g/viewform?usp=sf_link
@@ -185,7 +234,7 @@ https://docs.google.com/forms/d/e/1FAIpQLSflhEpY-kmYyDT87xbUyB0sqA88rkK9oxrXjGw0
 
 あ、  
 [Twitter](https://twitter.com/dullNeko) と [Mastodon（うかどん）](https://ukadon.shillest.net/@dullNeko) にもおりますので、  
-そちらにお声がけ頂いても大丈夫です。
+そちらでお声がけ頂いても大丈夫です。
 
 
 # ライセンスおよび免責事項
