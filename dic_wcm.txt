@@ -1,0 +1,76 @@
+＃ WebClapModokiの里々用サンプルコード
+＃　メインメニューなどから WebClapModoki を呼び出してお使い下さい。
+
+＃　【※注意※】
+＃　本サンプルコードは、さとりすと２で使用されている
+＃　神夜みゅんさんの「ゴーストキット改良版Plus」を前提として記述しています。
+＃
+＃　具体的には、
+＃　読み込んでいる辞書内（「ゴーストキット改良版Plus」であれば dic_advanced.txt 内）にて、
+＃　＊OnUserInput と OnUserInputCancel が以下の通り拡張されていることを前提としています。
+＃
+＃　＊OnUserInput
+＃　＞（Ｒ０）を空打ちされた	（is_empty（バイト値,1）（Ｒ１））
+＃　＄（Ｒ０）	（Ｒ１）
+＃　＞（Ｒ０）を教えてもらった
+＃　＊OnUserInputCancel
+＃　＞（Ｒ０）を空打ちされた	（compare,（Ｒ１）,close）
+
+＊WebClapModoki
+\![open,inputbox,WEB拍手もどき入力,--timeout=-1,--text=いいね！,--limit=800]
+\p[0]（作者にメッセージを送ることができます）
+（感想・要望・バグ報告など、お気軽にどうぞ！）
+＃　一応、上限値として --limit=800 を指定していますが、これは厳密にテストした値ではありません。
+＃　GASのスクリプト実行時間制限（６分／回）、
+＃　SSPのインプットボックスで表示できる領域の大きさ…等々を鑑みると、
+＃　あまり上限値を大きくしても意味がなさそう、と判断した結果です。
+
+＃　【参考】
+＃　■ UKADOC Project さくらスクリプトリスト
+＃　https://ssp.shillest.net/ukadoc/manual/list_sakura_script.html
+＃　\![open,inputbox,ID,表示時間,テキスト,オプション,...]
+
+＊WEB拍手もどき入力を教えてもらった
+＄WCM_URL	https://script.google.com/macros/s/YYY~YYY/exec
+＄送信元	【ゴーストさんの名前や愛称を入力するのがおススメです】
+＄送信内容	（Ｒ１）
+＄メモ	【メモ欄として、ご自由にお使い下さい。呼び出し元の情報を代入できれば、特定トークへの質問・リクエストを記録したりできる…かも】
+\p[0]（拍手送信開始…）
+\![execute,http-POST,（WCM_URL）,--param=message_body="（送信元）;（送信内容）;（メモ）",--async=OnWebClapModoki,--timeout=5]
+
+＃　【※注意※】
+＃　＄WCM_URL	の内容を「ご自身でデプロイして取得したWebアプリのURL」に書き換えないと動きません。ご注意くださいまし。
+＃　OnUserInput イベントを経由しているため、
+＃　（Ｒ１）＝（Reference1）が「先の inputbox で入力された内容」です。
+
+＃ なお、現行の WebClapModoki_GAS の仕様では、
+＃ （送信元）;（送信内容）;（メモ）の３要素を ;(半角セミコロン) で区切った文字列以外、
+＃ 受け付けない（＝内部的にはエラー出して処理が止まり、スプレッドシートに記録されない）ようになっています。
+
+＃ 他の方の（Web拍手の）処理を見てると、
+＃ 「ゴーストさんの名前とか＠コメント」としておいて、後で見た時に分かりやすいように工夫されている例をお見掛けしたので、
+＃ なら最初から ; で区切って分解できるようにした方が便利かな…と思って拡張してみました。
+
+＊WEB拍手もどき入力を空打ちされた
+\p[0]（拍手送信をキャンセルしました）
+
+＊OnWebClapModoki
+\p[0]（拍手送信完了。ありがとうございます！）
+
+＊OnWebClapModokiFailure
+\p[0]（拍手送信失敗／理由：（Ｒ４）です）
+＃ （Ｒ４）＝（Reference4）にエラーコードが入ります
+
+＃ 【参考】
+＃ ■ UKADOC Project さくらスクリプトリスト - http get/post オプション
+＃ https://ssp.shillest.net/ukadoc/manual/list_sakura_script.html#notes_executehttp
+＃ ■ UKADOC Project SHIORI Eventリスト - OnExecuteHTTPComplete, OnExecuteHTTPFailure
+＃ https://ssp.shillest.net/ukadoc/manual/list_shiori_event.html#OnExecuteHTTPComplete
+
+＃ OnExecuteHTTPComplete
+＃ ＞拍手送信完了	（Ｒ１）==（--async=で指定した識別ID）
+＃ OnExecuteHTTPFailure
+＃ ＞拍手送信完了	（Ｒ１）==（--async=で指定した識別ID）
+＃ と書いて Reference1 で分岐させるパターンも、処理を集約する書き方として良いと思います。
+＃ 私は識別ID毎に別イベントとした方が分かりやすいな、と思ったので OnWebClapModoki を指定しました。
+＃ ここらへんは好みな感じ…？
