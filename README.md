@@ -138,7 +138,7 @@ GitHubの練習がてら公開してみることにした次第です。
 1) __ご自身の Google ドライブ__ に、[このスプレッドシート](https://docs.google.com/spreadsheets/d/1j_h4weHihW-uVeTFtHTwrs6QwRPAT36sEBf3DPbo3ms/edit?usp=sharing)のコピーを作成してください。  
 Googleアカウントでログインしたブラウザ上で開けば、メニューの[ファイル]→[コピーを作成]で簡単にコピーできます。  
 また、名前（WebClapModoki (template) のコピー）は好きに変えて大丈夫です。  
-2) 同じくご自分の Google ドライブに、新規 Google Apps Script を作成し、[WebClapModoki.txt](https://github.com/dullNeko/WebClapModoki_GAS/blob/main/WebClapModoki_GAS_7.txt) の中身をコピペして上書き保存してください。  
+2) 同じくご自分の Google ドライブに、新規 Google Apps Script を作成し、[WebClapModoki.txt](https://github.com/dullNeko/WebClapModoki_GAS/blob/main/WebClapModoki_GAS_v7.txt) の中身をコピペして上書き保存してください。  
 ※ 1. のスプレッドシート、2. の Google Apps Script の共有設定  
 （「右クリックメニュー」→「共有」→「一般的なアクセス」の設定値）は __「制限付き」でOK__ です。  
 これらのURLを公開する必要もありません。むしろ秘密にしておいて下さいまし。
