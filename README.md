@@ -1,7 +1,7 @@
 
 <!-- 外部参照リンクの定義 -->
 [SS_template]: https://docs.google.com/spreadsheets/d/1j_h4weHihW-uVeTFtHTwrs6QwRPAT36sEBf3DPbo3ms/edit?usp=sharing
-[WebClapModoki_GAS]: /WebClapModoki_GAS_v7.txt
+[WebClapModoki_GAS]: /WebClapModoki_GAS.txt
 [dic_wcm]: /dic_wcm.txt
 
 # WebClapModoki_GAS
@@ -240,7 +240,7 @@ https://docs.google.com/forms/d/e/1FAIpQLSflhEpY-kmYyDT87xbUyB0sqA88rkK9oxrXjGw0
 
 # ライセンスおよび免責事項
 
-本スクリプト (WebClapModoki_GAS.txt) は NYSL Version 0.9982 に従います。  
+本スクリプト [WebClapModoki_GAS.txt][WebClapModoki_GAS] は NYSL Version 0.9982 に従います。  
 ライセンス全文は下記の通りです。
 
 --------------------------------------------------------------------
