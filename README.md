@@ -1,3 +1,9 @@
+
+<!-- 外部参照リンクの定義 -->
+[SS_template]: https://docs.google.com/spreadsheets/d/1j_h4weHihW-uVeTFtHTwrs6QwRPAT36sEBf3DPbo3ms/edit?usp=sharing
+[WebClapModoki_GAS]: /WebClapModoki_GAS_v7.txt
+[dic_wcm]: /dic_wcm.txt
+
 # WebClapModoki_GAS
 
 WebClap-like system by using Google Apps Script & Google spreadsheet.
@@ -92,7 +98,7 @@ GASでできないこと／問題点になりそうな所を挙げておきま�
   - なので、標準仕様では「Mastodonへのトゥート機能」は使えないように細工してあります。ご自身に責任が降りかかることを認識した上で、十分な注意を払っての使用をお願いいたします。
 - 「一日あたりの処理量」に制限があり、それらのほとんどは有償プランでも緩和されない
   - 処理量制限の詳細は [こちらのページ](https://developers.google.com/apps-script/guides/services/quotas) にある通りです。
-  - [WebClapModoki_GAS.txt](https://github.com/dullNeko/WebClapModoki_GAS/blob/main/WebClapModoki_GAS_v7.txt) の冒頭、「★ 参考資料」セクション内「★ GAS全体の制限について」でも記述しましたが、結構厳しめの制限です。
+  - [WebClapModoki_GAS.txt][WebClapModoki_GAS] の冒頭、「★ 参考資料」セクション内「★ GAS全体の制限について」でも記述しましたが、結構厳しめの制限です。
   - この制限のため、スクリプトを組む際には「セル参照を行う回数をできるだけ減らし、書き込み・読み出しは一括で行う」などのテクニックを使う必要性が高くなっています。
 - Google さんのサービスなので、唐突にサービス終了して使えなくなる可能性がある
   - 2009年から続いている古株サービスですし、利用者も少なくない（はず）ですし、何より Google のサービス全体を連携させて使うための仕組みなので、可能性は低め…とは思いますが…。
@@ -136,19 +142,14 @@ GitHubの練習がてら公開してみることにした次第です。
 
 一応、文章での簡易説明も記述しておきます。
 
-<!-- 外部参照リンクの定義 -->
-[SS_template]: https://docs.google.com/spreadsheets/d/1j_h4weHihW-uVeTFtHTwrs6QwRPAT36sEBf3DPbo3ms/edit?usp=sharing
-[WebClapModoki_GAS]: /WebClapModoki_GAS_v7.txt
-[dic_wcm]: /dic_wcm.txt
-
 ## 手順1.  
-__ご自身の Google ドライブ__ に、[このスプレッドシート](SS_template)のコピーを作成してください。  
+__ご自身の Google ドライブ__ に、[このスプレッドシート][SS_template]のコピーを作成してください。  
 Googleアカウントでログインしたブラウザ上で開けば、メニューの[ファイル]→[コピーを作成]で簡単にコピーできます。  
 また、名前（WebClapModoki (template) のコピー）は好きに変えて大丈夫です。
 
 ## 手順2.  
 同じくご自分の Google ドライブに「新規 Google Apps Script」を作成し、  
-[WebClapModoki.txt](WebClapModoki_GAS) の中身をコピペして、上書き保存してください。  
+[WebClapModoki.txt][WebClapModoki_GAS] の中身をコピペして、上書き保存してください。  
 
 【注意】  
 1.のスプレッドシート、2. の Google Apps Script の共有設定  
@@ -182,7 +183,7 @@ doPostTest 関数（動作テスト用関数）を実行してみてください
 1.でコピーしたスプレッドシートの "posted_comment" シートの「コメント」列に、  
 「いいね！ 【NG】」が入力されているのは、正常動作です。  
 （checkContentTextByNGWordsList() 関数が仕事して、  
-　URLらしき文字列（http://www）を【NG】に置換した結果です）
+　"URLらしき文字列"を【NG】に置換した結果です）
 
 使っていて「ちょっとこれは見たくないな…」という文字列が出てきたら、  
 "NG_words_list" 上に行を追加して、単語を増やしたり書き換えたりしてみてください。 
@@ -195,7 +196,7 @@ https://script.google.com/macros/s/YYY~YYY/exec
 形式のURLを取得してください。
 
 ## 手順6.
-5.で取得したURLを [dic_wcm.txt](dic_wcm) の中の  
+5.で取得したURLを [dic_wcm.txt][dic_wcm] の中の  
 ```
 ＄WCM_URL	https://script.google.com/macros/s/YYY~YYY/exec  
 ```
