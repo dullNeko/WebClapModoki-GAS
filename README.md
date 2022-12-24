@@ -33,8 +33,9 @@ WebClap-like system by using Google Apps Script & Google spreadsheet.
 [伺的アドベントカレンダー2022][uka_adcurry2022]、25日の記事です。  
 [24日の Zichqec 氏の記事](https://zichqec.github.io/s-the-skeleton/advent_calendar_2022_02)に続いて、dullNeko がお送りします。
 
-伺か界隈で良くお見掛けする [Web拍手][WebClapOrg] がアレなことになっていると知り、  
-手持ちの技術で代替になりそうな何かを組んでみた、という記事になっております。
+伺か界隈で良くお見掛けする [Web拍手][WebClapOrg] が長らくメンテされていない（らしい）と知り、  
+手持ちの技術（Google Apps Script & Google スプレッドシートの組み合わせ）で、  
+代替になりそうな何かを組んでみた…という記事になっております。
 
 長い事ユーザ専門だったので、  
 こういった記事を書くのも、人様に使って頂く目的でスクリプトを公開するのも、初めてです…  
