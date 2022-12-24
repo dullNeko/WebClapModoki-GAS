@@ -1,13 +1,41 @@
 //===========================================================================================
-// WebClapModoki_GAS_v7
+// WebClapModoki_GAS_v8
 // 
 // 【作成者】
 // dullNeko (https://github.com/dullNeko/WebClapModoki_GAS)
 //
-// 【更新履歴】                 
+// 【更新履歴】
+// △ … 機能追加など
+// ※ … コードの整理・修正・バグ対応など
+// ▼ … 機能の削除など
+//
+// 2022/12/21 v8  : 導入がスムーズに行くよう、v7を再調整。
+//
+//                  ※初期設定を簡単にするため、
+//                  　Googleスプレッドシート（のテンプレート）のコピーを持ってきて、
+//                  　その 'id' をこのスクリプト内の
+//                  　const SPREADSHEET_ID = 'XXX...XXX';
+//                  　に入れれば、
+//                  　即 doPostTest() 関数でのテストを通過し、Webアプリとしてのデプロイまでできるように整理。
+//
+//                  ※その一環として、 const DEBUG_DISABLE = 1; を既定値に変更。
+//                  　問題があった時に使うだけで十分だし、
+//                  　DEBUG_DISABLE = 1(＝デバック関数によるセル参照・書込を禁止)にしていないと、
+//                  　1回あたりの処理時間が 約2秒/回 から 約10秒/回 に跳ね上がる上、
+//                  　50000回/日 のセル参照制限も浪費してしまうので。
+//
 // 2022/12/21 v7  : 公開用に調整した最初のバージョン。
-//                  MastodonへのAPI経由でのトゥート機能を試験実装するとともに、
-//                  セーフティとしてプロパティサービスを利用しないと動作しないように調整。
+//
+//                  △予め設定した（"const SHEET_NAME_NGWL" で定義された 'NG_words_list' シートに入力された）
+//                  　NGワード集を用いて、コメント中のNGワードを弾く関数
+//                  　● checkContentTextByNGWordsList(raw_content, replace_str, del_mode)
+//                  　を実装。
+//
+//                  △MastodonへのAPI経由でのトゥート関数
+//                  　● tootByMastodonAPI(toot_content)
+//                  　を試験実装するとともに、
+//                  　セーフティとしてプロパティサービスを利用しないと動作しないように調整。
+//
 // 2022/12/15 v1  : Web拍手代替物がGASで組めるかのテスト版。
 //                  とりあえず動作確認できたレベル。
 //===========================================================================================
@@ -141,7 +169,7 @@
     多分このあたりで引っかかっている…のだと思いますが…
     前述の通り、レスポンスを利用する場面が思いつかなかったので、これ以上は検証していません。
 
-    ■ Content Service  |  Apps Script  |  Google Developers
+    ■ Content Service  |  Apps Script  |  Google Developers
     https://developers.google.com/apps-script/guides/content?hl=en
 
     > Redirects
@@ -218,7 +246,7 @@
     スクリプトプロパティ・ユーザープロパティの区分は Deprecated(非推奨) に指定されており、
     また、一時期無くなっていた「新GUIでの管理操作」も復活しています。
 
-    ■ Properties Service  |  Apps Script  |  Google Developers
+    ■ Properties Service  |  Apps Script  |  Google Developers
     https://developers.google.com/apps-script/reference/properties?hl=en
 
     ■ 【GAS】プロパティサービスについてまとめる - Qiita
@@ -235,7 +263,7 @@
     getUserProperties()     -> ユーザー固有の設定（指標やヤードポンド単位など）
     getDocumentProperties() -> ドキュメント固有のデータ（埋め込みグラフのソース URL など）
 
-    ■ プロパティ サービス  |  Apps Script  |  Google Developers
+    ■ プロパティ サービス  |  Apps Script  |  Google Developers
     https://developers.google.com/apps-script/guides/properties
 
     【GUI での設定・管理方法】
@@ -646,7 +674,7 @@
   }
 
   //======================================
-  // ● checkContentTextByNGWordsList(raw_content, del_mode)
+  // ● checkContentTextByNGWordsList(raw_content, replace_str, del_mode)
   //======================================
   /*
     特定の文字列（NGワード）が含まれている場合に、
