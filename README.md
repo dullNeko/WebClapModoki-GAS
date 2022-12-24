@@ -16,7 +16,7 @@
 <!-- WebClapModoki を里々から叩く場合のサンプルコード, 生テキスト形式表示 -->
 [dic_wcm_raw]: https://raw.githubusercontent.com/dullNeko/WebClapModoki_GAS/main/WebClapModoki_GAS.txt
 <!-- 伺的 Advent Calendar 2022 -->
-[uka_adcurry2022]: https://adventar.org/calendars/831
+[uka_adcurry2022]: https://adventar.org/calendars/8310
 <!-- Web拍手公式サイト -->
 [WebClapOrg]: https://www.webclap.com/index.html
 <!-- GAS の各種制限 -->
