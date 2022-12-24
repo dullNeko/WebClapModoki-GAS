@@ -1,8 +1,8 @@
 //===========================================================================================
-// WebClapModoki_GAS_v8
+// WebClapModoki-GAS_v8
 // 
 // 【作成者】
-// dullNeko (https://github.com/dullNeko/WebClapModoki_GAS)
+// dullNeko (https://github.com/dullNeko/WebClapModoki-GAS)
 //
 // 【更新履歴】
 // △ … 機能追加など
