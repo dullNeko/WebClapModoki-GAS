@@ -1,5 +1,5 @@
 //===========================================================================================
-// WebClapModoki-GAS_v8
+// WebClapModoki-GAS_v9
 // 
 // 【作成者】
 // dullNeko (https://github.com/dullNeko/WebClapModoki-GAS)
@@ -8,6 +8,11 @@
 // △ … 機能追加など
 // ※ … コードの整理・修正・バグ対応など
 // ▼ … 機能の削除など
+//
+//
+// 2022/12/25 v9 :  // ◆ 加工し終わった後の配列から、各パラメータを取り出す処理 内の return の記述ミス修正。
+//
+//                  ※return "500"; → return; に修正。
 //
 // 2022/12/24 v8  : 導入がスムーズに行くよう、v7を再調整。
 //
@@ -1072,7 +1077,7 @@
     if (post_data_splitted_count != 3) {
       debugPrintReturnCode("500");
       debugPrintProgressCheck("ERROR / Number of elements (post_data_splitted) is incorrect.");
-      return "500";
+      return;
     }
     debugPrintProgressCheck("step 5 / pass post_data_splitted array check")
     
