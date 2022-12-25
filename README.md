@@ -11,6 +11,8 @@
 [fig_1]: /Figure1_v2.gif
 <!-- Figure 2 -->
 [fig_2]: /Figure2_v1.png
+<!-- Figure 3 -->
+[fig_3]: /Figure3.png
 <!-- セットアップ手順詳細説明用スライド -->
 [ExpSlide]: /ExpSlide_20221225.pdf
 <!-- WebClapModoki を里々から叩く場合のサンプルコード, 生テキスト形式表示 -->
@@ -316,6 +318,14 @@ https://script.google.com/macros/s/YYY~YYY/exec
 ```
 形式のURLを取得してください。
 
+__【注意】__  
+デプロイの際は、下記画像の通り、  
+__「アクセスできるユーザー」__ を __「全員」に変更しなければならない__ 点にご注意下さい。  
+ここの設定を間違えると、SSP等「外部からのPOST」では動作しなくなってしまいます。  
+（Google アカウントでのログインが必須となり、「401 Unauthorized」が返ってきます）
+
+![Figure3][fig_3]  
+**Fig.3 デプロイ時の最重要注意点**
 
 ## 手順6.
 5.で取得したURLを [dic_wcm.txt][dic_wcm] の中の  
