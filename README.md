@@ -3,20 +3,32 @@
 
 <!-- WebClapModoki 標準動作用の Google スプレッドシート（テンプレート） -->
 [SS_template]: https://docs.google.com/spreadsheets/d/1j_h4weHihW-uVeTFtHTwrs6QwRPAT36sEBf3DPbo3ms/edit?usp=sharing
-<!-- WebClapModoki の GAS 本体 -->
-[WebClapModoki_GAS]: /WebClapModoki-GAS.txt
+
+<!-- WebClapModoki の GAS 本体 (v9) -->
+[WebClapModoki-GAS]: /WebClapModoki-GAS.txt
+<!-- WebClapModoki の GAS 本体中の、
+  // ◆ 加工し終わった後の配列から、各パラメータを取り出す処理の行 -->
+[WebClapModoki-GAS_param_ext]: /WebClapModoki-GAS.txt#L1068
+
+<!-- WebClapModoki の GAS 本体 (v10) -->
+[WebClapModoki-GAS_v10]: /WebClapModoki-GAS_v10.txt
 <!-- WebClapModoki を里々から叩く場合のサンプルコード -->
-[dic_wcm]: /dic_wcm.txt
-<!-- Figure 1 -->
-[fig_1]: /Figure1_v2.gif
-<!-- Figure 2 -->
-[fig_2]: /Figure2_v1.png
-<!-- Figure 3 -->
-[fig_3]: /Figure3.png
-<!-- セットアップ手順詳細説明用スライド -->
-[ExpSlide]: /ExpSlide_20221225.pdf
+[dic_wcm]: /files/dic_wcm.txt
 <!-- WebClapModoki を里々から叩く場合のサンプルコード, 生テキスト形式表示 -->
 [dic_wcm_raw]: https://raw.githubusercontent.com/dullNeko/WebClapModoki-GAS/main/WebClapModoki-GAS.txt
+
+<!-- Figure 1 動作イメージ-->
+[fig_1]: /files/Figure1_v2.gif
+<!-- Figure 2 動作概念図-->
+[fig_2]: /files/Figure2_v1.png
+<!-- Figure 3 デプロイ時の最重要注意点-->
+[fig_3]: /files/Figure3.png
+<!-- Figure 4 v10 での動作イメージ-->
+[fig_4]: /files/Figure4.gif
+
+<!-- WebClapModoki-GAS 処理内容・導入手順の詳細説明スライド v8版 -->
+[ExpSlide]: /files/ExpSlide_20221225.pdf
+
 <!-- 伺的 Advent Calendar 2022 -->
 [uka_adcurry2022]: https://adventar.org/calendars/8310
 <!-- Web拍手公式サイト -->
@@ -33,7 +45,7 @@ WebClap-like system by using Google Apps Script & Google spreadsheet.
 # 前書き
 
 [伺的アドベントカレンダー2022][uka_adcurry2022]、25日の記事です。  
-[24日の Zichqec 氏の記事](https://zichqec.github.io/s-the-skeleton/advent_calendar_2022_02)に続いて、dullNeko がお送りします。
+[24日の Zichqec 氏の記事](https://zichqec.github.io/s-the-skeleton/advent_calendar_2022_02) に続いて、dullNeko がお送りします。
 
 伺か界隈で良くお見掛けする [Web拍手][WebClapOrg] が長らくメンテされていない（らしい）と知り、  
 手持ちの技術（Google Apps Script & Google スプレッドシートの組み合わせ）で、  
@@ -63,8 +75,11 @@ __画面遷移を伴わず、SSPからWeb拍手と同じ様に扱える__ のが
 ※お借りしているシェルは [にはちびっとさんのフリーシェル「和装のおばあさん01」](https://waka.edo-jidai.com/sub/freeshell.html) です。  
 ※マウスカーソルは [ゴースト回覧板３ｒｄ「ロスト・ユー・サムウェア」スレの2214氏作ルストリカマウスカーソル](https://jbbs.shitaraba.net/bbs/read.cgi/computer/44300/1432111308/2214) です。
 
-![20221216_WebClapModoki_SampleAnimation_v1][fig_1]
-**Fig.1 動作イメージ（こんな感じの動作をします、というデモGIF動画）**
+![Figure1][fig_1]
+<p align="center"><strong>
+Fig.1 動作イメージ（こんな感じの動作をします、というデモGIF動画）
+</strong></p>
+
 
 
 # どういう仕組みなの？
@@ -78,10 +93,12 @@ __画面遷移を伴わず、SSPからWeb拍手と同じ様に扱える__ のが
 という点です。
 
 なので、ご自分の Google ドライブ上へのスクリプトの導入・初期設定など、  
-__デべさんご自身に、手動で実行して頂かなければならない作業__ があります。  
+__デべさんご自身に、手動で実行して頂かなければならない作業__ があります。
 
-![20221222_illustrated_behavior_v1][fig_2]
-**Fig.2 動作の図解というか概念図っぽいもの**
+![Figure2][fig_2]
+<p align="center"><strong>
+Fig.2 動作の図解というか概念図っぽいもの
+</strong></p>
 
 
 # なんで作ったの？
@@ -114,7 +131,8 @@ __「サーバサイドのプログラムを、サーバの立ち上げ・維持
 代物です。  
 
 Google さんが提供するサービスなので、  
-__他の各種 Google サービス（Google スプレッドシート、Gmail、カレンダー、etc...）と連携して処理する機能__ もついてきます。  
+__「他の各種 Google サービス（Google スプレッドシート、Gmail、カレンダー、etc...）と連携して処理する機能」__  
+もついてきます。  
 （というか、公式の謳い文句的にはこちらがメインですね）
 
 
@@ -154,7 +172,7 @@ __GASでできないこと／問題点になりそうな所__ を挙げておき
   - ご自身に責任が降りかかる危険性を認識した上で、十分な注意を払っての使用をお願いいたします。
 - __「一日あたりの処理量」に制限があり、それらのほとんどは有償プランでも緩和されない__
   - 処理量制限の詳細は [こちらのページ][GAS_quotas] にある通りです。
-  - [WebClapModoki-GAS.txt][WebClapModoki_GAS] の冒頭、「★ 参考資料」セクション内「★ GAS全体の制限について」でも記述しましたが、結構厳しめの制限です。
+  - [WebClapModoki-GAS.txt][WebClapModoki-GAS] の冒頭、「★ 参考資料」セクション内「★ GAS全体の制限について」でも記述しましたが、結構厳しめの制限です。
   - この制限のため、スクリプトを組む際には「セル参照を行う回数をできるだけ減らし、書き込み・読み出しは一括で行う」などのテクニックを使う必要性が高くなっています。
 - __Google さんのサービスなので、唐突にサービス終了して使えなくなる可能性がある__
   - 2009年から続いている古株サービスですし、利用者も少なくない（はず）ですし、何より Google のサービス全体を連携させて使うための仕組みなので、可能性は低め…だとは思いますが…無い、とは言い切れません。
@@ -195,9 +213,15 @@ GitHubの練習がてら公開してみることにした次第です。
 ## __※作業する前に、下記【注意喚起】を必ずお読みください！__
 
 README.md内にて画像付きで説明…してみようとして挫折したので、  
-次の PDFファイル (詳細説明スライド) をご覧くださいまし。
+次の PDFファイル (詳細説明スライド) をご覧くださいまし。  
 
 [WebClapModoki-GAS 処理内容・導入手順の詳細説明スライド][ExpSlide]
+
+__【注意】__  
+※2022/12 時点での Google Apps Script の UI での操作手順なので、  
+　今後、Google さん側で UI の更新があると、古い資料になる可能性が高いです。  
+　「画面全然違うんだけど！」ということがあれば、  
+　↓の連絡先のフォーム等でお知らせ頂ければ幸いです。
 
 一応、文章のみの簡易な説明も、  
 手順X. として下に記述しておきます。
@@ -215,11 +239,11 @@ __「Google スプレッドシートのすべてのスプレッドシートの�
 __「外部サービスへの接続」__  
 …２つだけですが、要求される内容はかなり重いものです。
 
-長くなってしまいますが…大事な所なので、できるだけ詳しく説明しますね。
+長くなってしまいますが… __大事な所__ なので、できるだけ詳しく説明しますね。
 
 - __「Google スプレッドシートのすべてのスプレッドシートの参照、編集、作成、削除」__  
-  - SPREADSHEET   = SpreadsheetApp.openById(SPREADSHEET_ID); を使用しているため。
-  - __本スクリプトでは上記の１シートの参照・編集（書込）しか実行しません__ が、__コードを書き換えれば別のシートを操作できますし、シートの作成・削除も可能__ です。
+  - SPREADSHEET   = SpreadsheetApp.openById(SPREADSHEET_ID); を使用しているため、要求されます。
+  - __本スクリプトでは上記１シートの参照・編集（書込）しか実行しません__ が、__コードを書き換えれば別のシートを操作できますし、シートの作成・削除も可能__ です。
   - __悪意あるスクリプトの場合（あるいはご自分で組んだスクリプトであっても、処理の記述ミス等があれば）、「ドライブに存在するスプレッドシート全てを列挙し、削除する」「スプレッドシート内の機密情報を、外部に吐き出す」などといった悪辣な動作をさせることも可能です。__
   - ？マークをクリックした際の詳細（この権限が要求し、結果としてスクリプトができるようになることの詳細）は、次の通りです。
     - このアプリが次の権限を求めています。
@@ -234,8 +258,8 @@ __「外部サービスへの接続」__
   - ご覧の通り、__「自分が操作する場合にできること全て」ができます__ し、
   - 同時に __「スクリプトが行ったことであっても、ユーザ本人が操作したものと見做される」__ という、強い文言も入っています。
 - __「外部サービスへの接続」__  
-  - tootByMastodonAPI(toot_content) 関数内で UrlFetchApp.fetch を使用しているため。
-  - __本スクリプトではコメントアウト＆セーフティがかけられているため、細工を回避しない限り機能しません（＝標準構成で、この権限を使用することはありません）__ が、それでも記述がある以上、実行される可能性があるとして、要求されます。
+  - tootByMastodonAPI(toot_content) 関数内で UrlFetchApp.fetch を使用しているため、要求されます。
+  - __本スクリプトではコメントアウト＆セーフティがかけられているため、細工を回避しない限り機能しません（＝標準構成で、この権限を使用することはありません）__ が、それでも「記述がある以上、実行される可能性がある」として、要求されます。
   - ？マークの説明に「外部サービスへのネットワーク接続の作成（例: データの読み取りまたは書き込み）」とある通り、UrlFetchApp.fetch はHTTPリクエストを通じてデータのスクレイピング（収集・抽出）を行うものであるため、場合によっては他サーバへの攻撃・業務妨害と見做される動作をしてしまう危険性があります。
 
 ここは…私からは、  
@@ -257,7 +281,7 @@ Googleアカウントでログインしたブラウザ上で開けば、メニ�
 
 ## 手順2.  
 同じくご自分の Google ドライブに「新規 Google Apps Script」を作成し、  
-[WebClapModoki.txt][WebClapModoki_GAS] の中身をコピペして、上書き保存してください。  
+[WebClapModoki.txt][WebClapModoki-GAS] の中身をコピペして、上書き保存してください。  
 [RAW表示][dic_wcm_raw] からコピペするのが楽かもです。
 
 __【注意】__  
@@ -312,7 +336,7 @@ doPostTest 関数の実行が継続されます。
 
 
 ## 手順5.  
-4.で問題がなければ WebClapModoki_GAS を __Webアプリとしてデプロイ__ し、  
+4.で問題がなければ WebClapModoki-GAS を __Webアプリとしてデプロイ__ し、  
 ```
 https://script.google.com/macros/s/YYY~YYY/exec  
 ```
@@ -325,7 +349,9 @@ __「アクセスできるユーザー」__ を __「全員」に変更しなけ
 （Google アカウントでのログインが必須となり、「401 Unauthorized」が返ってきます）
 
 ![Figure3][fig_3]  
-**Fig.3 デプロイ時の最重要注意点**
+<p align="center"><strong>
+Fig.3 デプロイ時の最重要注意点
+</strong></p>
 
 ## 手順6.
 5.で取得したURLを [dic_wcm.txt][dic_wcm] の中の  
@@ -334,13 +360,57 @@ __「アクセスできるユーザー」__ を __「全員」に変更しなけ
 ```
 に上書きして、ご自身のゴーストさんに実装してください。  
 
-サンプルコードは里々での実装例ですが、  
+サンプルコード ([dic_wcm.txt][dic_wcm]) は里々での実装例ですが、  
 実体はさくらスクリプト  
 ```
 \![execute,http-POST,（WCM_URL）,--param=message_body="（送信元）;（送信内容）;（メモ）",（オプション）]  
 ```
-の実行なので、  
-特にSHIORIを選ばず動かせると思います。
+の実行ですので、  
+上記さくらスクリプトを呼び出せるのであれば、特にSHIORIを選ばず動かせると思います。  
+
+__【注意】__  
+現行安定版の __WebClapModoki-GAS_v9__ の仕様では、  
+以下の「 ;(半角セミコロン) 区切りで、要素を３つ並べた文字列」しか受け付けないようになっています。
+```
+（送信元）;（送信内容）;（メモ）
+```
+これは、スクリプト中の  
+[// ◆ 加工し終わった後の配列から、各パラメータを取り出す処理][WebClapModoki-GAS_param_ext]  
+セクション内にて、  
+「POSTされた文字列を ;(半角セミコロン) で区切って配列に格納する」  
+「配列の範囲外へのアクセスを防ぐため、要素数が３であるか（＝上記の３要素が確実に入っているか）確実にチェックする」
+処理を行っているために生じている制限です。
+
+…ただ、記事公開後に検証した限り、  
+
+- __「JavaScript（Google Apps Script）では、配列の範囲外にアクセスしても大きな問題はない」__
+  - 単に undefined が値として代入されるだけで、Out of Bounds のような例外で動作が止まったりしない
+  - 何なら undefined をセルに書き込みしても、単に空白セルになるだけで、何のエラーにもならない
+  - 列数が足りない（例えば３列しかない）場合に .appendRow メソッドで５列１行追加を行うと、３列→５列への拡張（２列を右側に足す）も自動で行ってくれる
+
+ということが判明し、それなら  
+__別に要素を３つに限定しなくても、誤動作・動作不良の心配は無いのでは？__  
+という発想に至って、
+
+```
+（送信元）
+（送信元）;（送信内容）
+（送信元）;（送信内容）;（メモ）
+（送信元）;（送信内容）;（メモ）;（追加情報１）
+（送信元）;（送信内容）;（メモ）;（追加情報１）;（追加情報２）
+```
+の、どのパターン（要素数１～５）でも受け付けるように変更した、  
+__[WebClapModoki-GAS_v10][WebClapModoki-GAS_v10]__ も公開してみました。  
+動作イメージは下のGIF画像の通りです。
+
+![Figure4][Fig_4]  
+<p align="center"><strong>
+Fig.4 v10での動作イメージ（要素数を変えてPOSTした時の挙動）
+</strong></p>
+
+こちらは…まだ想定入力パターンの列挙、およびその検証が不十分で、  
+上手く動かない可能性もあるのですが…  
+もし良ければ、お試しください。
 
 
 ## 手順7.  
@@ -392,7 +462,7 @@ https://docs.google.com/forms/d/e/1FAIpQLSflhEpY-kmYyDT87xbUyB0sqA88rkK9oxrXjGw0
 
 # ライセンスおよび免責事項
 
-本スクリプト [WebClapModoki_GAS.txt][WebClapModoki_GAS] は NYSL Version 0.9982 に従います。  
+本スクリプト [WebClapModoki-GAS.txt][WebClapModoki-GAS] は NYSL Version 0.9982 に従います。  
 ライセンス全文は下記の通りです。
 
 --------------------------------------------------------------------
