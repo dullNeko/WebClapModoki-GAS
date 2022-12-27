@@ -626,7 +626,7 @@
     // 面倒でもBlobでつくらないといけない（らしい）です。
     // 
     // 【参考】
-    // ■Google Apps ScriptのdoPostでJSONなパラメータのPOSTリクエストを受ける - Qiita
+    // ■ Google Apps ScriptのdoPostでJSONなパラメータのPOSTリクエストを受ける - Qiita
     // https://qiita.com/shirakiya/items/db22de49f00710478cfc#json%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E3%82%92%E5%8F%97%E3%81%91parse%E3%81%99%E3%82%8B
     let e = {
       postData : Utilities.newBlob(POST_CONTENT)
@@ -847,13 +847,13 @@
     生成されたアプリ名をクリックすると出てくる「アクセストークン」を使用する必要があります。
 
     【参考】
-    ■Atsushi's Homepage 〜 Mastodon API を使ってみる
+    ■ Atsushi's Homepage 〜 Mastodon API を使ってみる
     https://www.antun.net/tips/api/mastodon.html
-    ■Google Apps Scriptを利用してWeb APIを取得する方法を試してみた | DevelopersIO
+    ■ Google Apps Scriptを利用してWeb APIを取得する方法を試してみた | DevelopersIO
     https://dev.classmethod.jp/articles/google-apps-script-request/
 
     【アイデア元】
-    ■Donさんのトゥート
+    ■ Donさんのトゥート
     https://ukadon.shillest.net/@nikolat/109520818205515491
     
     ▼使い方
@@ -909,9 +909,9 @@
       他の人のタイムラインを汚染しないですむ（らしい）ので、入れてあります。
      
      【参考】
-      ■Atsushi's Homepage 〜 Mastodon API を使ってみる
+      ■ Atsushi's Homepage 〜 Mastodon API を使ってみる
       https://www.antun.net/tips/api/mastodon.html
-      ■Mastodon API から「未収載」でトゥートするサンプル（bash と PHP） - Qiita
+      ■ Mastodon API から「未収載」でトゥートするサンプル（bash と PHP） - Qiita
       https://qiita.com/KEINOS/items/27d201afed4ed665cb11
     */
     let options = {
@@ -1045,7 +1045,7 @@
       文字列のまま受け取って、自前で split メソッドを使ってバラす方向で実装しました。
      
      【参考】
-      ■Google Apps ScriptのdoPostでJSONなパラメータのPOSTリクエストを受ける - Qiita
+      ■ Google Apps ScriptのdoPostでJSONなパラメータのPOSTリクエストを受ける - Qiita
       https://qiita.com/shirakiya/items/db22de49f00710478cfc
     */
 

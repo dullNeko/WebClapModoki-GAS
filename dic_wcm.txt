@@ -1,34 +1,34 @@
 ＃ WebClapModokiの里々用サンプルコード
 ＃ メインメニューなどから WebClapModoki を呼び出してお使い下さい。
 
-＃　【※注意※】
-＃　本サンプルコードは、さとりすと２で使用されている
-＃　神夜みゅんさんの「ゴーストキット改良版Plus」を前提として記述しています。
+＃ 【※注意※】
+＃ 本サンプルコードは、さとりすと２で使用されている
+＃ 神夜みゅんさんの「ゴーストキット改良版Plus」を前提として記述しています。
 ＃
-＃　具体的には、
-＃　読み込んでいる辞書内（「ゴーストキット改良版Plus」であれば dic_advanced.txt 内）にて、
-＃　＊OnUserInput と OnUserInputCancel が以下の通り拡張されていることを前提としています。
+＃ 具体的には、
+＃ 読み込んでいる辞書内（「ゴーストキット改良版Plus」であれば dic_advanced.txt 内）にて、
+＃ ＊OnUserInput と OnUserInputCancel が以下の通り拡張されていることを前提としています。
 ＃
-＃　＊OnUserInput
-＃　＞（Ｒ０）を空打ちされた	（is_empty（バイト値,1）（Ｒ１））
-＃　＄（Ｒ０）	（Ｒ１）
-＃　＞（Ｒ０）を教えてもらった
-＃　＊OnUserInputCancel
-＃　＞（Ｒ０）を空打ちされた	（compare,（Ｒ１）,close）
+＃ ＊OnUserInput
+＃ ＞（Ｒ０）を空打ちされた	（is_empty（バイト値,1）（Ｒ１））
+＃ ＄（Ｒ０）	（Ｒ１）
+＃ ＞（Ｒ０）を教えてもらった
+＃ ＊OnUserInputCancel
+＃ ＞（Ｒ０）を空打ちされた	（compare,（Ｒ１）,close）
 
 ＊WebClapModoki
 \![open,inputbox,WEB拍手もどき入力,--timeout=-1,--text=いいね！,--limit=800]
 \p[0]（作者にメッセージを送ることができます）
 （感想・要望・バグ報告など、お気軽にどうぞ！）
-＃　一応、上限値として --limit=800 を指定していますが、これは厳密にテストした値ではありません。
-＃　GASのスクリプト実行時間制限（６分／回）、
-＃　SSPのインプットボックスで表示できる領域の大きさ…等々を鑑みると、
-＃　あまり上限値を大きくしても意味がなさそう、と判断した結果です。
+＃ 一応、上限値として --limit=800 を指定していますが、これは厳密にテストした値ではありません。
+＃ GASのスクリプト実行時間制限（６分／回）、
+＃ SSPのインプットボックスで表示できる領域の大きさ…等々を鑑みると、
+＃ あまり上限値を大きくしても意味がなさそう、と判断した結果です。
 
-＃　【参考】
-＃　■ UKADOC Project さくらスクリプトリスト
-＃　https://ssp.shillest.net/ukadoc/manual/list_sakura_script.html
-＃　\![open,inputbox,ID,表示時間,テキスト,オプション,...]
+＃ 【参考】
+＃ ■ UKADOC Project さくらスクリプトリスト
+＃ https://ssp.shillest.net/ukadoc/manual/list_sakura_script.html
+＃ \![open,inputbox,ID,表示時間,テキスト,オプション,...]
 
 ＊WEB拍手もどき入力を教えてもらった
 ＄WCM_URL	https://script.google.com/macros/s/YYY~YYY/exec
@@ -38,14 +38,15 @@
 \p[0]（拍手送信開始…）
 \![execute,http-POST,（WCM_URL）,--param=message_body="（送信元）;（送信内容）;（メモ）",--async=OnWebClapModoki,--timeout=5]
 
-＃　【※注意※】
-＃　＄WCM_URL	の内容を「ご自身でデプロイして取得したWebアプリのURL」に書き換えないと動きません。ご注意くださいまし。
-＃　OnUserInput イベントを経由しているため、
-＃　（Ｒ１）＝（Reference1）が「先の inputbox で入力された内容」です。
+＃ 【※注意※】
+＃ ＄WCM_URL	の内容を「ご自身でデプロイして取得したWebアプリのURL」に書き換えないと動きません。ご注意くださいまし。
+＃ OnUserInput イベントを経由しているため、
+＃ （Ｒ１）＝（Reference1）が「先の inputbox で入力された内容」です。
 
-＃ なお、現行の WebClapModoki_GAS の仕様では、
+＃ なお、現行安定版の WebClapModoki_GAS_v9 の仕様では、
 ＃ （送信元）;（送信内容）;（メモ）の３要素を ;(半角セミコロン) で区切った文字列以外、
 ＃ 受け付けない（＝内部的にはエラー出して処理が止まり、スプレッドシートに記録されない）ようになっています。
+＃ この制限を撤廃した WebClapModoki_GAS_v10 も試験的に公開しています。良ければお試しください。
 
 ＃ 他の方の（Web拍手の）処理を見てると、
 ＃ 「ゴーストさんの名前とか＠コメント」としておいて、後で見た時に分かりやすいように工夫されている例をお見掛けしたので、
