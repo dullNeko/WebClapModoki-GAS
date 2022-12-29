@@ -1,6 +1,5 @@
 
-    NYSL Version 0.9982
-    ----------------------------------------
+# NYSL Version 0.9982
     
     A. 本ソフトウェアは Everyone'sWare です。このソフトを手にした一人一人が、
        ご自分の作ったものを扱うのと同じように、自由に利用することが出来ます。
@@ -18,10 +17,9 @@
     
     D. 以上の３項は、ソース・実行バイナリの双方に適用されます。
 
---------------------------------------------------------------------
 
-    NYSL Version 0.9982 (en) (Unofficial)
-    ----------------------------------------
+# NYSL Version 0.9982 (en) (Unofficial)
+
     A. This software is "Everyone'sWare". It means:
       Anybody who has this software can use it as if he/she is
       the author.
