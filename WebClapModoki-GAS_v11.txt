@@ -1268,7 +1268,7 @@
 
     // initPropertyValues 関数を実行していない場合
     // (= scriptProperties.getProperty('ROWS_COUNT') が null の場合)は、一旦停止
-    console.log(scriptProperties.getProperty('ROWS_COUNT'));
+    //console.log(scriptProperties.getProperty('ROWS_COUNT'));
     if (scriptProperties.getProperty('ROWS_COUNT') === null) {
       console.error("ERROR: プロパティサービスに ROWS_COUNT が存在しません。");
       console.error("先に initPropertyValues 関数を実行し、ROWS_COUNT および EMAIL_ADDRESS を作成して下さい。")
