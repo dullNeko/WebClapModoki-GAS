@@ -1,4 +1,3 @@
-
 <!-- 外部参照リンクの定義 -->
 
 <!-- WebClapModoki 標準動作用の Google スプレッドシート（テンプレート） -->
@@ -13,7 +12,7 @@
 <!-- WebClapModoki の GAS 本体 (v10) -->
 [WebClapModoki-GAS_v10]: /WebClapModoki-GAS_v10.txt
 <!-- WebClapModoki を里々から叩く場合のサンプルコード -->
-[dic_wcm]: /files/dic_wcm.txt
+[dic_wcm]: /dic_wcm.txt
 <!-- WebClapModoki を里々から叩く場合のサンプルコード, 生テキスト形式表示 -->
 [dic_wcm_raw]: https://raw.githubusercontent.com/dullNeko/WebClapModoki-GAS/main/WebClapModoki-GAS.txt
 <!-- WebClapModoki の LICENSE -->
@@ -58,6 +57,73 @@
 # WebClapModoki-GAS
 
 WebClap-like system by using Google Apps Script & Google spreadsheet.
+
+# 更新履歴
+
+## 2023-01-17 : 記事更新、WebClapModoki-GAS_v11.txt の追加。
+
+本「更新履歴」セクションを新設しました。  
+また、WebClapModoki-GAS_v11.txt を追加しました。
+
+WebClapModoki-GAS_v11.txt は、  
+WebClapModoki-GAS_v10.txt に、追加で
+
+- メール通知用関数（sendMailAlert(count)、dailyCheckTotalCounts_v2()）  
+- 並びにその初期化用関数（initPropertyValues()）  
+- スプレッドシートの id のハードコーディング回避策（プロパティサービスから SPREADSHEET_ID を読み込んで使用する）  
+
+を試験実装した版になります。
+
+上記の追加・変更のため、新たに  
+
+- メール関係の権限を追加で許可する（Gmailへのフルアクセス、本人に代わってのメール送信）  
+- プロパティサービスの EMAIL_ADDRESS , ROWS_COUNT の適切な設定  
+- トリガ条件を設定して、定期的に dailyCheckTotalCounts_v2() を実行させる設定
+- （スプレッドシートの id のハードコーディング回避策を利用する場合）プロパティサービスに SPREADSHEET_ID を手動で追加・値を登録
+
+を行う必要があり、要求権限が大きく、導入も煩雑になっています。
+
+そのため、
+
+- WebClapModoki-GAS.txt (v9)
+  - 記事通りの導入手順でOK。
+  - 動作安定版。
+  - ただし「（送信元）;（コメント）;（メモ）」の形式以外は受け付けない。
+- WebClapModoki-GAS_v10.txt
+  - 記事通りの導入手順でOK。
+  - 要素数３個縛りを撤廃しているので、柔軟にデータの受付ができます。
+  - ただし開発版扱いです。テスト不足気味…。
+- WebClapModoki-GAS_v11.txt
+  - v10にメール通知機能を試験実装した版。
+  - ただしメール関係の権限＆記事にない設定手順が必要で、設置が面倒。
+  - 相変わらずテスト不十分な開発版です…。
+
+…として、使い分けて頂ければ幸いです。
+
+## 2022-12-28 : 記事更新、「Tips: Versioned Deployments の扱い方」を追記。
+
+実運用時に（自分が）困りがちだった問題、  
+すなわち「デプロイする度にURLが変わって管理が煩雑」という問題に対する、  
+「こうしたらURL不変で運用できます」な説明セクションです。
+
+## 2022-12-27 : 記事更新、WebClapModoki-GAS_v10.txt の追加。
+
+WebClapModoki-GAS_v10.txt は、
+WebClapModoki-GAS.txt (v9) から、
+てにてにさんのツイートを参考に、
+（送信元）１つだけ～
+（送信元）;（コメント）;（メモ）;（追加情報１）;（追加情報２）
+の５つまで、
+データを可変で受け取れるようにした版です。
+
+POSTする側での縛り（＝（送信元）;（コメント）;（メモ）の形でないと受け付けない）が無くなっただけなので、
+導入手順自体は、記事通りでOKです。
+
+## 2022/12/25 : 記事公開。WebClapModoki-GAS.txt (v9) リリース。
+
+最初の公開日。  
+記事通りの手順で導入・動作させたい場合は、
+WebClapModoki-GAS.txt (v9) をお使いください。
 
 # 前書き
 
