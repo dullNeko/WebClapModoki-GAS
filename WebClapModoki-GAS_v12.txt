@@ -1,0 +1,1758 @@
+//===========================================================================================
+// WebClapModoki-GAS_v12
+//===========================================================================================
+// 
+// 【作成者】
+// dullNeko (https://github.com/dullNeko/WebClapModoki-GAS)
+//
+//===========================================================================================
+/*
+   【更新履歴】
+   △ … 機能追加など
+   ※ … コードの整理・修正・バグ対応など
+   ▼ … 機能の削除など
+
+   2023/01/18 v12 : Discord WebHook URL を利用して、コメント投稿があったら Discord へ投稿する関数を追加。
+                    initPropertyValues() の修正、動作に影響のないコメントの表記ゆれ整理。
+                    GAS_Date_Time の取得時、YYYY/mm/dd hh:mm:ss になるようフォーマットするよう変更。
+                    
+                    △ sendDiscordWebHook(post_content) 関数の実装。
+                    ※ initPropertyValues() に DISCORD_WEBHOOK_URL, SPREADSHEET_ID の作成・確認を追加。
+                    ※ doPost(e) 内の GAS_Date_Time の取得処理変更。
+                    ※ doPost(e) 内に
+                    　 ◆ 外部（WebHookなど）に投げる content を用意する
+                    　 ◆ ついでに Discord Webhook URL に投げてみる処理
+                    　 の２つを追加しました。
+
+                    sendDiscordWebHook 関数を実際に利用して、Discordの特定チャンネルに通知を送るためには、
+                    1) initPropertyValues() を実行して DISCORD_WEBHOOK_URL をプロパティサービスに新規作成。
+                    2) DISCORD_WEBHOOK_URL の値に、予めDiscord側で発行した
+                       https://discordapp.com/api/webhooks/***
+                       の URL を貼り付けて変更しておく。
+                       ※英語ですが、
+                       ■ Intro to Webhooks – Discord の Making a Webhook
+                       https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks
+                       の手順で発行できます。
+                       画像、というか画面構成は同じなので、そう難しくはない…はず。
+                    3) doPost(e) の中でコメントアウトされている
+                       //let res_discord = sendDiscordWebHook(content);
+                       のコメントアウトを外して、有効化する。
+                    の追加手順が必要です。
+
+                    …どんどん導入が面倒になっていきますね…。
+
+   2023/01/17 v11 : メール通知機能の試験実装、
+                    並びに SPREADSHEET_ID をプロパティサービスから読む記述を追加。
+                    
+                    ただし、SPREADSHEET_ID をプロパティサービスから読みこむ処理に切り替える場合は、
+                    ●手動での key: SPREADSHEET_ID のプロパティサービスへの登録を行った上で、
+                    ●並びに記述のコメントアウトの切り替え、すなわち
+                    const SPREADSHEET_ID = "***";
+                    //const SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+                    から
+                    //const SPREADSHEET_ID = "***";
+                    const SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+                    への書き換えを行う必要があります。
+                    
+                    △ checkPropertyValueAll(key) 関数の実装。
+                    △ initPropertyValues() 関数の実装。
+                    △ sendMailAlert(count) 関数の実装。
+                    △ dailyCheckTotalCounts_v2() 関数の実装。
+                    
+                    メール通知機能を実際に利用するには、
+                    ●プロパティ サービス の設定（EMAIL_ADDRESS, ROWS_COUNT の２つ）
+                    ●トリガー機能による定期的な関数の実行（dailyCheckTotalCounts_v2 の実行）
+                    ●Gmailへのアクセス許可の付与（「Gmailアカウントの操作」「本人に代わってのメール送信」の２権限）
+                    が必要です。
+                    具体的な手順は、下の (1)-(5) を参照くださいまし。
+                    
+                    前回実行時の総行数を記録した値（前回記録値）と、今回実行時の総行数（今回取得値）を比較し、
+                    前回記録値 < 今回取得値 の場合のみ、メールで通知を送付します。
+                    GAS の Gmail 送信には 100通/日 の制限があるので、一日一回程度の頻度がおススメです。
+                    
+                    メール通知機能を利用するために、
+                    追加のセットアップ手順として、
+                    (1) initPropertyValues() 関数を実行
+                    (2) このエディタ画面の←にある歯車アイコン（プロジェクトの設定）を開き、
+                        その画面の一番↓にある スクリプト プロパティ 内の EMAIL_ADDRESS の値を、
+                        通知先（送信先）にしたいメールアドレスに書き換える
+                        （※この時、「スクリプトプロパティの編集」→「値の書換」→「スクリプトプロパティの保存」のクリックを忘れずに！）
+                    (3) sendMailAlert(count) 関数をエディタから実行してみて、
+                       「新着 TEST 件」のメールが届くかチェック
+                    (4) dailyCheckTotalCounts_v2() 関数をエディタから実行してみて、
+                       「新着 n 件」のメールが届くかチェック
+                        （※コメント数が0の場合は何も届きません、実行時エラーが無ければＯＫです）
+                    (5) dailyCheckTotalCounts_v2() 関数を適当な時間（例えば毎日0時）に実行するように、
+                        このエディタ画面の←にある時計アイコン（トリガー）からトリガ条件を設定しておく
+                    の５ステップが必要です。
+                    
+                    現状 dullNeko の技術力不足のため「新着件数のみの通知」です。
+                    「新着のコメント内容を本文に入れる」ところまではいけませんでした…。
+                    
+   2022/12/27 v10 : 送信データ形式を「（送信元）;（送信内容）;（メモ）」に限定する制限を撤廃、同時に周辺処理変更。
+                    
+                    ※ 「◆ 加工し終わった後の配列から、各パラメータを取り出す処理」において、
+                    　 配列要素数チェックを廃止し、代わりに undefined のデータを .filter メソッドで消すように変更
+                    　 
+                    ※ 「◆ コメントからNGワードを除去する処理」についても、
+                    　 上記変更に伴い (送信内容) (=comment) が空になるパターンが生じたので対処
+                    　 今の所、（送信元）(=sender)が空であっても受け付ける（左端に時刻だけ記録する）状態になっています。
+                    
+   2022/12/25 v9  : 「◆ 加工し終わった後の配列から、各パラメータを取り出す処理」内の return の記述ミス修正。
+                    
+                    ※ return "500"; の箇所を return; に修正。（修正漏れでした）
+                    
+   2022/12/24 v8  : 導入がスムーズに行くよう、v7を再調整。
+                    
+                    ※ 初期設定を簡単にするため、
+                    　 Googleスプレッドシート（のテンプレート）のコピーを持ってきて、
+                    　 その 'id' をこのスクリプト内の
+                    　 const SPREADSHEET_ID = 'XXX...XXX';
+                    　 に入れれば、
+                    　 即 doPostTest() 関数でのテストを通過し、Webアプリとしてのデプロイまでできるように整理。
+                    
+                    ※ その一環として、 const DEBUG_DISABLE = 1; を既定値に変更。
+                    　 問題があった時に使うだけで十分ですし、
+                    　 DEBUG_DISABLE = 0 (＝デバック関数によるセル参照・書込を有効) にした状態だと、
+                    　 1回あたりの処理時間が 約2秒/回 から 約10秒/回 に跳ね上がる上、
+                    　 50000回/日 のセル参照制限も浪費してしまうので。
+                    
+   2022/12/21 v7  : 公開用に調整した最初のバージョン。
+                    
+                    △ 予め設定した（"const SHEET_NAME_NGWL" で定義された 'NG_words_list' シートに入力された）
+                    　 NGワード集を用いて、コメント中のNGワードを弾く関数
+                    　 ● checkContentTextByNGWordsList(raw_content, replace_str, del_mode)
+                    　 を実装。
+                    
+                    △ MastodonへのAPI経由でのトゥート関数
+                    　 ● tootByMastodonAPI(toot_content)
+                    　 を試験実装するとともに、
+                    　 セーフティとしてプロパティサービスを利用しないと動作しないように調整。
+                    
+   2022/12/15 v1  : Web拍手代替物がGASで組めるかのテスト版。
+                    とりあえず動作確認できたレベル。
+*/
+//===========================================================================================
+
+
+//===========================================================================================
+// ★ 参考資料
+//===========================================================================================
+  /*
+    覚えておいた方が良いページなど。
+   「直接コードを引用した」「大いに参考にさせて頂いたページ」等は
+    コード周辺に配置して明示するようにしています。
+  */
+
+  //=================================================================================
+  // ★ GAS全体の制限について
+  //=================================================================================
+  /*
+    ■ Google サービスの割り当て  |  Apps Script  |  Google Developers
+    https://developers.google.com/apps-script/guides/services/quotas
+
+    GASは基本的に無償で使用できるサービスですが、
+    代わりに、上記URLのページの通り「実行可能量」の制限があります。
+    > Apps Script サービスには、1 日あたりの割り当てと、一部の機能に対する制限があります。
+    > 割り当てまたは上限を超えると、スクリプトが例外をスローし、実行が停止します。
+    
+    伺かのゴーストさんから送信される程度、かつ、本スクリプトの処理量程度なら、
+    1) スクリプト全体の実行時間が 6分/実行 を超える
+    2) カスタム関数（自分で実装した関数）の実行時間が 30秒/実行 を超える
+    3) スクリプト実行時間の合計が 90分/日 を超える
+    4) スクリプトが 20ユーザ以上に（doPostトリガーで）実行される
+    を超えるまでは行かない、と想定していますが…
+
+    過去の経験では、
+    少し凝った処理を実装した場合 1) 2) の制限に引っかかることが多かったです。
+    
+    また、
+    3）のスクリプト実行時間の合計 90分/日 = 5400秒/日 も…意外に引っかかりやすいかもしれません。
+    doPostの処理が 2秒/回 で終わるとしても 2700回/日 で引っかかります。
+    うっかりデバッグ用関数を有効化した状態 (DEBUG_DISABLE = 0) でデプロイした場合、
+    大体 10秒/回 位になるので 540回/日 程度のPOSTがあったらアウトです。
+    
+    私が方法を知らないだけかもしれませんが、
+    「誰からもメッセージを受け付ける」設定だと、
+    下記の制約ゆえ【悪意を持って DoS 攻撃をされた場合】は…厳しい感じです…
+    もし対処法をご存じであれば、ご教示頂ければ幸いです。
+
+    ●GAS を Web App として公開し、"誰でも"実行できるようにして、
+    　かつ、自身の Google Drive 内にあるスプレッドシートに受信した内容を書き込む場合、
+    　（＝今回のように、WEB拍手的に使って記録を取る場合）
+    　必然的に「スクリプトの実行者」を「自分（GASを設置し公開した人のアカウント）の権限」で動作するように設定しなければならない。
+    ●上記の設定で GAS を動作させる場合、doPost の呼び出し元の情報は一切取得できない。
+    　「Googleアカウントでの認証を行う」ようにすれば、アカウントに紐づく情報を参照することは可能（らしいの）ですが…
+    　「Web拍手と同等の手軽さで、誰からもメッセージを受け付ける」をコンセプトとしている以上、この方法は取れません。
+    ●そもそも「doPostのトリガー起動自体をさせない」ようにする設定が見当たりません。
+    　 POSTメソッドによるHTTPリクエストがあった時点で、doPost関数が呼ばれることを止める手段は無さそうです。
+    　「見たくないコメントを、NGワード置換機能で記録させないようにする」程度は対応してみましたが…
+    　「特定の送信元からのPOSTリクエストに対して、doPostトリガー自体が起動しないようにする」は…私の能力では実現不可能でした。
+    
+    【Tipsっぽいもの】
+    ご自身で色々機能を付加したり、改造を加えたりする際には…例えば、
+
+    ■【GASの壁】実行時間6分の制限を回避するための対策とは | ワードプレステーマTCD
+    https://tcd-theme.com/2021/05/gas.html
+    
+    で言及されているように、
+    「関数の呼び出しを少なくするために、できる限り配列を活用する」
+    程度は、心がけた方が良いかもしれません。
+    
+    特に「セルから値を取得・書込を行う関数」の使用上限は最大 50,000回/日 なので、
+    セルを一つ一つ参照・書込するようなスクリプトを書くと、割と簡単に到達してしまいます。
+    
+    Gmailを利用してメールを送信する場合も、
+    (無料アカウントでは) 100件/日 と上限が少な目なので、ご注意ください。
+  */
+
+  //=================================================================================
+  // ★ return; で返ってくるレスポンスと、その周辺のメモ
+  //=================================================================================
+  /*
+    戻り値無しの return; で doPost 関数を終わらせると、下記のHTMLが返ってきます。
+    タイトルこそ「エラー」ですが、
+    通信そのものは成功している（HTML形式のデータが返ってきている）ため、
+    SSP側では通信失敗と判断されずに済んでいる…っぽいです。
+    
+    （SSP側でレスポンスをどう処理しているのか、詳しい所が分かってないので…間違ってたらすみません…）
+
+    今の所、SSP側でレスポンスをどうこうする必要性が感じられなかったため、
+    return; で終了させる実装にしてあります。
+
+    =================================================================================
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <link rel="shortcut icon" href="//ssl.gstatic.com/docs/script/images/favicon.ico">
+        <title>エラー</title>
+        <style type="text/css" nonce="DoNmcCHV1-Lto4bGtBjRDQ">
+          body {
+            background-color: #fff;
+            margin: 0;
+            padding: 0;
+          }
+    
+          .errorMessage {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            font-weight: bold;
+            line-height: 150%;
+            padding-top: 25px;
+          }
+        </style>
+      </head>
+      <body style="margin:20px">
+        <div>
+          <img alt="Google Apps Script" src="//ssl.gstatic.com/docs/script/images/logo.png">
+        </div>
+        <div style="text-align:center;font-family:monospace;margin:50px auto 0;max-width:600px">スクリプトが完了しましたが、何も返されませんでした。</div>
+      </body>
+    </html>
+    =================================================================================
+
+    【補足情報】
+    試した限りでは、下手に
+    return ContentService.createTextOutput("200");
+    等と記述すると、
+    SSPの \![execute,http-POST,…] からは 405 で送信失敗となり、
+    master/varフォルダへの受信データ保存も行われませんでした。
+    
+    GAS側の仕様上、ContentService を使った場合は
+    script.google.com → script.googleusercontent.com へのリダイレクトが発生するみたいです。
+    多分このあたりで引っかかっている…のだと思いますが…
+    前述の通り、レスポンスを利用する場面が思いつかなかったので、これ以上は検証していません。
+
+    ■ Content Service  |  Apps Script  |  Google Developers
+    https://developers.google.com/apps-script/guides/content?hl=en
+
+    > Redirects
+    > For security reasons, content returned by the Content service isn't served from script.google.com,
+    > but instead redirected to a one-time URL at script.googleusercontent.com.
+    > This means that if you use the Content service to return data to another application,
+    > you must ensure that the HTTP client is configured to follow redirects.
+    > For example, in the cURL command line utility, add the flag -L.
+    > Check the documentation for your HTTP client for more information on how to enable this behavior.
+
+    =================================================================================
+    Status : 302 Found
+    Location : https://script.googleusercontent.com/macros/echo?user_content_key=r0p52JSTInaDuY9Dlbgw9Br2e9iNAJLHUV_DbKeLvHMcNRr70MrSwOqrzAdoqCTc5Qx4Zy_wAN8VE0Qv2CCyW-ypzfM_hZzQm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnHJkIlr-U6_ovsASZJecurTObhGtIArhQHC76WLpv5T0gT431s0X5eyeDjwhUryF42cfmhYoKVhbPyk-Ze9WsPAleLzsN86EjA&lib=MdONwa6ZrRt9rOiRVrwu8CA7Sf_dSFFzI
+
+    Status Code: 200 OK
+    access-control-allow-origin: *
+    alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+    cache-control: no-cache, no-store, max-age=0, must-revalidate
+    content-encoding: gzip
+    content-security-policy: frame-ancestors 'self'
+    content-type: text/plain; charset=utf-8
+    date: Tue, 20 Dec 2022 15:59:15 GMT
+    expires: Mon, 01 Jan 1990 00:00:00 GMT
+    pragma: no-cache
+    server: GSE
+    vary: Sec-Fetch-Dest, Sec-Fetch-Mode, Sec-Fetch-Site
+    x-content-type-options: nosniff
+    x-firefox-http3: h3
+    x-frame-options: SAMEORIGIN
+    x-xss-protection: 1; mode=block
+    =================================================================================
+
+    【補足情報２】
+    HTMLが返却されるならOK…ならこれは？と思って実行してみたもの。
+
+    return HtmlService.createHtmlOutput('<b>Thanks!</b>');
+
+    …確かにHTML形式のデータが返されるので、SSP側でエラーは出ないのですが…
+    本スクリプトの中身（関数名など）まで一緒に吐き出されるため、
+    利用が難しそうで断念しました…。
+  */
+
+  //=================================================================================
+  // ★ 機密情報（APIキー等）を保管するプロパティサービスのススメ
+  //=================================================================================
+  /*    
+    本コードでは「初心者への分かりやすさ」を優先し、
+    本来 "機密情報" として扱わねばならない情報（例：スプレッドシートを特定する 'id'）について、
+    ハードコーディング（ソースコード内に直接書き込んで埋め込む）する手法を取りました…が、
+    当然ながら、セキュリティ的にも、管理の煩雑さ的にも、好ましい手法ではありません。
+    
+    ※dullNekoは、テストコードのコピペ時に置換するのを忘れ、
+    　そういう大事な "機密情報" をうっかり人に晒してしまうという、
+    　洒落にならないミスをしたことがあります…
+    　まだ公開範囲が組織内で、かつ即座に指摘してくれた方がいらっしゃったため、
+    　外部に漏洩する前に即座に変更＆前データの無効化を確認して事なきを得ました…
+    　…始末書だけで済んで良かったです…ほんとに…
+    ※なお、本プロジェクトの
+    　WebClapModoki_GAS_v7.txt と dic_wcm.txt の公開時にも、
+    　自分のスプレッドシートのIDやWebアプリのURLを大公開するやらかしをしました。
+    　（リポジトリが一回リセットされて消えたのはそのせいです）
+    　まるで成長していない… 
+
+    …えーと、そういう悲しく辛い事態を招く恐れがありますので、
+    ハードコーディングは基本的におすすめしません。
+    
+    で、本題ですが、
+    そういう "機密にしておきたい情報" を、
+    ハードコーディングを回避しつつ保管するための機能として、
+    GASには「プロパティサービス」が実装されています。
+    
+    【注意】
+    2022年12月現在、下記 Qiita 記事で触れられている
+    スクリプトプロパティ・ユーザープロパティの区分は Deprecated(非推奨) に指定されており、
+    また、一時期無くなっていた「新GUIでの管理操作」も復活しています。
+
+    ■ Properties Service  |  Apps Script  |  Google Developers
+    https://developers.google.com/apps-script/reference/properties?hl=en
+
+    ■ 【GAS】プロパティサービスについてまとめる - Qiita
+    https://qiita.com/chii-08/items/c8bb24c1141eb6ede83e
+
+    ■ GASのProperties Serviceを使ってスクリプトのプロパティを読み書きをする - Qiita
+    https://qiita.com/unsoluble_sugar/items/ec5c935c4bfc2e06b246
+
+    2022年12月現在の仕様としては、
+    「プロパティの取得時に用いる関数が変われば、得た値のアクセス権（共有範囲）も変わる」仕様になっているようです。
+    先の例（アクセストークンやスプレッドシートのIDなど）については getScriptProperties() が最適…と思います。
+
+    getScriptProperties()   -> アプリ全体の構成データ（デベロッパーの外部データベースのユーザー名やパスワードなど）
+    getUserProperties()     -> ユーザー固有の設定（指標やヤードポンド単位など）
+    getDocumentProperties() -> ドキュメント固有のデータ（埋め込みグラフのソース URL など）
+
+    ■ プロパティ サービス  |  Apps Script  |  Google Developers
+    https://developers.google.com/apps-script/guides/properties
+
+    【GUI での設定・管理方法】
+    GUI で管理する場合、画面左の
+    [歯車アイコン] -> [プロジェクトの設定] -> [スクリプト プロパティ]
+    から、キー・値の追加・変更・削除ができます。
+    
+    「キーと値は、いずれも "文字列" に変換される」という制限がありますが、
+    保管すべき情報は概ね文字列で扱えるものでしょうから、問題になることは少ないと思います。
+    
+    【使い方】
+    例えば、Mastodon の【アクセストークン】として、
+    [key   : API_KEY_MASTODON]
+    [value : XXXXXXXXXXXXXXXXXXXX]
+    を上記 GUI から設定し、スクリプト中で参照したい場合、
+    const API_KEY_MASTODON = PropertiesService.getScriptProperties().getProperty("API_KEY_MASTODON");
+    等とすれば読み出せました。
+
+  */
+
+
+//============================================================================================
+// ★ グローバル変数・定数群
+//============================================================================================
+
+  //======================================
+  // ● SPREADSHEET_ID
+  //======================================
+  /*
+    受け取ったデータを書き込む対象スプレッドシートを 'id' で指定する用の定数。
+    
+    【何を書けばいいの？】
+    スプレッドシートを開いた時のURLを見て、
+    https://docs.google.com/SPREADSHEETs/d/XXX...XXX/edit
+    ↑の XXX...XXX の部分がここで指定すべき 'id' になります。
+
+    'id' を間違えていると、
+    Exception: Unexpected error while getting the method or property openById on object SpreadsheetApp.
+    が出て止まります。
+    
+    余談ですが、スプレッドシートの名前を変更しても、
+    作成時に付与された 'id' は不変です。
+    「別のスプレッドシートには、必ず別の 'id' が割り振られる」ので、
+    記録先を変えたい場合は、ここの変更を忘れないようにしてくださいまし。
+    
+    なお、記録対象のスプレッドシートならびに本スクリプトの共有設定は「制限付き」でOKです。
+    （＝記録対象のスプレッドシート、このGAS本体(コード.gs)を公開する必要はありません）
+
+    ただし、本スクリプトのデプロイ時、
+    「アクセスできるユーザー」を「全員」にした上で発行されるWebアプリケーションのURL
+    https://script.google.com/macros/s/YYY...YYY/exec
+    については、辞書ファイル内に記述する（＝ユーザさんに公開する）必要があります。
+
+    【！注意！】
+    ここの 'id' は、
+    「あなたのゴーストさんの感想が詰まったスプレッドシート」を特定できてしまう情報なので、
+    基本的に自分以外の誰か（ユーザさん、他のデべさん、友人知人家族）に公開してはいけません。
+    取り扱いには十分ご注意下さい。
+
+    【備忘録】
+    コードの記述を少なくするため、
+    「グローバル定数として SPREADSHEET_ID を定義し、全関数で参照する」ように記述しました…が、
+    この書き方だと、
+    「SPREADSHEET_ID を条件分岐で定義する」
+    （例えばプロパティサービスの値を優先する、等）
+    といったことが、簡単にはできなくなるようです。
+    
+    というのも、関数を実行する前に、
+    グローバル変数・定数の定義・オブジェクト取得処理が必ず入るので、
+    「SPREADSHEET_ID の記述が正確で、正しくシートオブジェクトを取得できる状態」でないと、
+    SPREADSHEET_ID や SPREADSHEET の取得に失敗し、例外を吐いて止まるためです。
+    
+    難儀なことに、if 文のみならず、try-catch さえも使えませんでした。
+    （条件分岐・try-catch の中でグローバル変数を定義しようとすると、
+    　当該グローバル変数・定数が「未定義」になってしまうため、その後の処理を通過できません）
+    
+    そのため、SPREADSHEET_ID を正しくハードコーディングしていない限り、
+    「initPropertyValues 関数のような初期化用関数を実行する」こともできませんし、
+    「条件分岐で、プロパティサービスに値が設定されていればそちらを優先する」といった処理も書けませんでした。
+    
+    GUI から手動で SPREADSHEET_ID をプロパティサービスに登録し、
+    const SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+    とすればよいだけ…ではあるのですが、
+    導入時の手順がやや煩雑になるため、現状、標準仕様にはしておりません。
+  */
+  const SPREADSHEET_ID = '***';
+  //const SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+
+  //===========================
+  // ● SHEET_NAME_COMMENT
+  //===========================
+  /*
+    ↑の 'id' で特定したスプレッドシート内の、コメントを記録するシートを 'シート名' で指定する用。
+    私は 'posted_comments' で固定しています。
+  */
+  const SHEET_NAME_COMMENT = 'posted_comments';
+
+  //===========================
+  // ● SHEET_NAME_NGWL
+  //===========================
+  /*
+    ↑の 'id' で特定したスプレッドシート内の、
+    ブラックリスト式のNGワードリストを 'シート名' で指定する用。
+    私は 'NG_words_list' で固定しています。
+  */
+  const SHEET_NAME_NGWL = 'NG_words_list';
+
+  //===========================
+  // ● SHEET_NAME_DEBUG
+  //===========================
+  /*
+    ↑の 'id' で特定したスプレッドシート内の、
+    print文デバッグ的に値を書き込むシートを 'シート名' で指定する用。
+    私は 'debug' で固定しています。
+  */
+  const SHEET_NAME_DEBUG = 'debug'
+
+  //===========================
+  // ● SPREADSHEET
+  //===========================
+  /*
+    スプレッドシートオブジェクト。
+    ↓のシートオブジェクトの親玉さん。
+    これで「Googleドライブ上のどのスプレッドシートか」を特定し、取り扱うことになります。
+  */
+  const SPREADSHEET   = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  //===========================
+  // ● SHEET_COMMENT
+  // ● SHEET_DEBUG  
+  // ● SHEET_NGWL   
+  //===========================
+  /*
+    シートオブジェクト。
+    実際にデータ操作（セルを参照しての書き込み・読み出し等）を行う場合は、
+    これらシートオブジェクトに対して操作を行う必要があります。
+  */
+  // SSPから送信されたコメント等の記録シート
+  const SHEET_COMMENT = SPREADSHEET.getSheetByName(SHEET_NAME_COMMENT);
+  // 本スクリプト内の debugPrint関数の記録先シート
+  const SHEET_DEBUG   = SPREADSHEET.getSheetByName(SHEET_NAME_DEBUG);
+  // ブロックしたい単語群（NGワードリスト）の記録されたシート
+  const SHEET_NGWL    = SPREADSHEET.getSheetByName(SHEET_NAME_NGWL);
+
+  //===========================
+  // 【デバッグ用】
+  // ● debug_row
+  // ● debug_col
+  // ● debug_pos
+  //===========================
+  /*
+    debugPrint関数で使う変数群。
+    A2-B2 は進捗状況記録用に、A3-B3はリターンコード記録用に使うので、
+    私は A4-B4 を初期位置にしています。
+  */
+  let debug_row = 1; // 1=A列, 2=B列, 3=C列, ...
+  let debug_col = 4; // 1=1行目, 2=2行目, 3=3行目, ...
+  let debug_pos = 0; // print文デバッグ的セル書込の位置調整用変数。
+                     // debug_col+debug_Pos で位置をずらしています。
+
+  //===========================
+  // 【デバッグ用】
+  // ● DEBUG_DISABLE
+  //===========================
+  /*
+    ●debugPrint(label, content)
+    ●debugPrintProgressCheck(content)
+    ●debugPrintReturnCode(content)
+    の内部処理を実行するか否か、のフラグ。
+    
+    DEBUG_DISABLE = 1 で「実行しない」（デバッグ無効）
+    DEBUG_DISABLE = 0 で「実行する」　（デバッグ有効）
+    になります。
+    ※処理の都合上 1 以外の値であれば「実行する」になるのでご注意を。
+    
+    冒頭で述べた「セル参照・書込回数の制限(50,000回/日)」を回避するため、
+    デバッグ時以外・実運用時は、
+    DEBUG_DISABLE = 1
+    として、不要なセル参照の呼び出しが起こらないようにした方が良いと思います。
+  */
+  const DEBUG_DISABLE = 1;
+
+//============================================================================================
+// ★ 自作関数群
+//============================================================================================
+
+  //======================================
+  // 【デバッグ用】
+  // ● showTest()
+  //======================================
+  /*
+  function showTest() {
+  // Logger.log(object)  -> オブジェクト型の表示
+  // console.log(object) -> 利用できるメソッドの列挙
+    Logger.log(console);
+    console.log(console);
+    Logger.log(Logger);
+    console.log(Logger);
+  }
+  */
+
+
+  //======================================
+  // 【初期化用】
+  // ● initPropertyValues()
+  //======================================
+  /*
+   初期化用関数。
+   最初に一回だけ実行して、プロパティサービスに必要なキーを作成します。
+   （一応、二回以上起動しても上書きしないようにはしました）
+
+   現状、スタンドアロンスクリプト＆エディタの環境で、引数を与えて実行する手段が分からないので、
+   単なる空箱（プロパティのキーと、適当な初期値）を作るだけの、半端な初期化です…。
+
+   スクリプトプロパティは GUI から（画面←の歯車アイコンから）操作できるので、
+   実際の値はそちらから入力してやってくださいまし。
+   値の編集後は、
+   最後に「スクリプトプロパティの保存」をクリックするのをお忘れなく。
+      
+   deleteAllUserPropertyValues() 
+   deleteAllDocumentPropertyValues()
+   の２つは…
+   誤って（GUIからは不可視で、設定値を確認できない）UserProperty と DocumentProperty に
+   設定してしまうミスをやらかしたため、急遽作成した関数です。
+   （動作は、単にそれぞれのプロパティサービスの値を全削除するだけです）
+   同じミスをしない限りは不要なのですが、一応残してあります…。
+
+   ▼引数
+    なし（求む、スタンドアロンスクリプトで引数指定して実行する方法）
+
+   ▼戻り値
+    なし（※作成するだけです）
+  */
+  //======================================
+  function initPropertyValues() {
+    // スクリプトプロパティ オブジェクト (ScriptProperties型) 
+    let scriptProperties = PropertiesService.getScriptProperties();
+
+    // key: SPREADSHEET_ID が存在していない場合のみ新規作成
+    // 全関数で参照する、記録先のスプレッドシートの 'id' です。
+    // v10 以前ではハードコーディング前提でしたが、プロパティサービスに格納する形での利用もできるようにしました。
+    // 初期値の「***」では動作しませんので、ご自身のスプレッドシートの 'id' に変更する必要があります。
+    if (scriptProperties.getProperty('SPREADSHEET_ID') === null) {
+      scriptProperties.setProperty('', "***");
+    }
+
+    // key: EMAIL_ADDRESS が存在していない場合のみ新規作成
+    // sendMailAlert(count) 関数内で利用する、
+    // 「通知先（送信先）のメールアドレス」です。
+    // 初期値の「t@t」では動作しませんので、ご自身のメールアドレスに変更してくださいまし。
+    if (scriptProperties.getProperty('EMAIL_ADDRESS') === null) {
+      scriptProperties.setProperty('EMAIL_ADDRESS', "t@t");
+    }
+    
+    // key: ROWS_COUNT が存在していない場合のみ新規作成
+    // dailyCheckTotalCounts_v2() 関数内で利用する、
+    // 「前回実行時の総行数」の記録値です。
+    if (scriptProperties.getProperty('ROWS_COUNT') === null) {
+      scriptProperties.setProperty('ROWS_COUNT', "0");
+    }
+
+    // key: DISCORD_WEBHOOK_URL が存在していない場合のみ新規作成
+    // https://discordapp.com/api/webhooks/*** の形そのままで登録して使用します。
+    if (scriptProperties.getProperty('DISCORD_WEBHOOK_URL') === null) {
+      scriptProperties.setProperty('DISCORD_WEBHOOK_URL', "https://discordapp.com/api/webhooks/***");
+    }
+
+    // 一応、確認用にコンソールへ出力。
+    console.log("key   : " + 'SPREADSHEET_ID');
+    console.log("value : " + scriptProperties.getProperty('SPREADSHEET_ID'));
+    console.log("key   : " + 'EMAIL_ADDRESS');
+    console.log("value : " + scriptProperties.getProperty('EMAIL_ADDRESS'));
+    console.log("key   : " + 'ROWS_COUNT');
+    console.log("value : " + scriptProperties.getProperty('ROWS_COUNT'));
+    console.log("key   : " + 'DISCORD_WEBHOOK_URL');
+    console.log("value : " + scriptProperties.getProperty('DISCORD_WEBHOOK_URL'));
+  }
+  /*
+  function deleteAllUserPropertyValues() {
+    var userProperties = PropertiesService.getUserProperties();
+    userProperties.deleteAllProperties();
+  }
+  function deleteAllDocumentPropertyValues() {
+    var documentProperties = PropertiesService.getDocumentProperties();
+    documentProperties.deleteAllProperties();
+  }
+  */
+
+  //======================================
+  // 【デバッグ用】
+  // ● checkPropertyValue(key)
+  //======================================
+  /*
+   プロパティサービスに登録された値を、キーを引数で指定して呼び出し、
+   コンソール上で確認する関数。
+
+   ▼引数
+   ●key
+    呼び出したい value の key
+
+   ▼戻り値
+    なし（コンソールでの確認に限定しています）
+  */
+  //======================================
+  function checkPropertyValue(key) {
+    const PROPERTY_VALUE = PropertiesService.getScriptProperties().getProperty(key);
+    console.log(key + ": " + PROPERTY_VALUE);
+  }
+
+  function checkPropertyValue_API_KEY_MASTODON() {
+    checkPropertyValue("API_KEY_MASTODON");
+  }
+
+  //======================================
+  // 【デバッグ用】
+  // ● checkPropertyValueAll(key)
+  //======================================
+  /*
+   プロパティサービスに登録された値を、キーを指定して呼び出し、コンソールログ上で確認する関数。
+   Script, User, Document の３つとも調べます。
+   （存在しない場合 null が返ってきます）
+   
+   公式の例では、先に
+    var documentProperties = PropertiesService.getDocumentProperties();
+    var scriptProperties = PropertiesService.getScriptProperties();
+    var userProperties = PropertiesService.getUserProperties();
+   とオブジェクトを定義する書き方が示されていますが、
+    PropertiesService.getDocumentProperties().getProperty(key);
+   とまとめてしまっても大丈夫でした。
+
+   ※ Browser.inputBox は、
+   　 スプレッドシートに紐づいた Container-bound Scripts でしか使用できないとのこと。
+   　 Standalone Scripts では… Ui クラスも使えないっぽいので、
+   　 エディタからは「引数を渡して実行する関数を記述する」以外になさそうです…。
+
+   ▼引数
+   ●key
+    呼び出したい value の key
+
+   ▼戻り値
+    なし（※コンソールでの確認に限定しています）
+  */
+  //======================================
+  function checkPropertyValueAll(key) {
+    // 引数の key が空だった場合は実行中止 
+    if (key === null) {
+      console.error("ERROR: key が空だったため、処理を中断しました。")
+    }
+
+    // key が指定されたら、存在するか否かのチェックはすっ飛ばして表示する
+    // （定義されてなければ null が返ってくるだけなので）
+    const PROPERTY_VALUE_SCRIPT = PropertiesService.getScriptProperties().getProperty(key);
+    console.log(key + "[Script]   : " + PROPERTY_VALUE_SCRIPT);
+    const PROPERTY_VALUE_USER = PropertiesService.getUserProperties().getProperty(key);
+    console.log(key + "[User]     : " + PROPERTY_VALUE_USER);
+    const PROPERTY_VALUE_DOC = PropertiesService.getDocumentProperties().getProperty(key);
+    console.log(key + "[Document] : " + PROPERTY_VALUE_DOC);
+  }
+
+  //======================================
+  // 【デバッグ用】
+  // ● debugPrint(label, content)
+  //======================================
+  /*
+   print文デバッグ的なことをするための関数。
+   console.log 等もありますが、外部から POST された際のデバッグに使い辛いので、
+   SHEET_DEBUG にラベルと値を記入する形で実装してみました。
+   
+   書き込み位置は、
+   debug_Pos, debug_row, debug_col を参照し、
+   呼び出す度にインクリメント（＝一つ↓にずら）しつつ書き込むようにしてあります。
+
+   ▼引数
+   ●label
+   後から見た時に「何を記録したのか」分かりやすくメモるためのラベル文。
+   ●content
+   print文で出力したい内容。
+   
+   ▼戻り値
+     0: 正常終了時
+    -1: DEBUG_DISABLE == 1 の場合
+  */
+  //======================================
+  function debugPrint(label, content) {
+    // DEBUG_DISABLE が 1(デバッグ無効) の場合はセル操作を実行しません
+    if (DEBUG_DISABLE == 1) {
+      return -1;
+    }
+    
+    // DEBUG_DISABLE が 1 でない場合は、通常通り処理を行います。
+    // 最初は A4:B4 に [label, content] を書き込み、
+    // 呼び出される度に、
+    // A5:B5, A6:B6, ... と一行づつ下に書き込みをずらし、前の出力が上書きされることを回避します。
+    
+    // 地味に注意ポイント：
+    // setValuesに渡す配列は「二次元配列」である必要があります。
+    const VALS = [
+      [label, content]
+    ];
+
+    // 【参考】getRange の矩形範囲選択
+    // .getRange(2, 1, 3, 4) // 2行A列(=A2)を起点とし、行数3×列数4の範囲を指定
+    // .getRange(4, 1, 1, 2) // 4行A列(=A4)を起点とし、行数1×列数2の範囲を指定
+    SHEET_DEBUG.getRange(debug_col+debug_pos, debug_row, 1, 2).setValues(VALS);
+    
+    // 【参考】これじゃダメなの？
+    // 分かりやすさ優先なら、↓の書き方でも良いと思います。
+    // ただ、この書き方だと debugPrint 関数を呼び出す度に２回セル参照が行われるため、
+    // 単純計算で↑の実行回数の２倍、50000回/日の制限を消費してしまいます。
+    //SHEET_DEBUG.getRange(debug_col+debug_pos,debug_row).setValue(label);     // (4,1) -> A4
+    //SHEET_DEBUG.getRange(debug_col+debug_pos,debug_row+1).setValue(content); // (4,2) -> B4
+
+    // 次に呼び出した際、１行↓にずらすためインクリメントしておきます。
+    debug_pos = debug_pos + 1
+    
+    // 正常終了。
+    return 0;
+  }
+
+  //======================================
+  // 【デバッグ用】
+  // ● debugPrintProgressCheck(content)
+  //======================================
+  /*
+    SHEET_NAME_DEBUG にラベルと値を記入する、
+    print文デバッグ的なことをするための関数・その２。
+    進捗状況を記録してチェックする専用関数です。
+    
+    主用途が
+    「A2 に "進捗状況", B2 に "どこまで進めたか" を書き込み、
+    　どこでエラー吐いて止まったか追跡する」 
+    なので、
+    書き込み先は関数内で直接指定することにしました。
+    
+    ▼引数
+    ●content
+    print文で出力したい内容。
+    "step 1: get XXXX" などと入れて、コード中のどこまで進めたか記録。
+
+    ▼戻り値
+      0: 正常終了時
+     -1: DEBUG_DISABLE == 1 の場合
+  */
+  //======================================
+  function debugPrintProgressCheck(content) {
+    // DEBUG_DISABLE が 1(デバッグ無効) の場合はセル操作を実行しません
+    if (DEBUG_DISABLE == 1) {
+      return -1;
+    }
+    // 地味に注意ポイント：
+    // setValuesに渡す配列は「二次元配列」である必要があります。
+    const VALS = [
+      ["進捗状況", content]
+    ];
+
+    // セル範囲は (A2:B2) で固定、内容を書き込むだけです。
+    SHEET_DEBUG.getRange("A2:B2").setValues(VALS);
+    return 0;
+  }
+
+  //======================================
+  // 【デバッグ用】
+  // ● debugPrintReturnCode(content)
+  //======================================
+  /*
+    SHEET_NAME_DEBUG にラベルと値を記入する
+    print文デバッグ的なことをするための関数・その３。
+    リターンコードを記録するための専用関数です。
+
+    ▼引数
+    ●content
+    print文で吐き出したい中身。
+    debugPrintReturnCode(200);などと書いて、
+    SSPには返しませんが、内部的にどうだったか記録しておく使い方を想定。
+
+    ▼戻り値
+      0: 正常終了時
+     -1: DEBUG_DISABLE == 1 の場合
+  */
+  //======================================
+  function debugPrintReturnCode(content) {
+    // DEBUG_DISABLE が 1(デバッグ無効) の場合はセル操作を実行しません
+    if (DEBUG_DISABLE == 1) {
+      return -1;
+    }
+
+    // 地味に注意ポイント：
+    // setValuesに渡す配列は「二次元配列」である必要があります。
+    const VALS = [
+      ["リターンコード", content]
+    ];
+
+    // セル範囲は (A3:B3) で固定、内容を書き込むだけです。
+    SHEET_DEBUG.getRange("A3:B3").setValues(VALS);
+    return 0;
+  }
+
+  //======================================
+  // 【デバッグ用】
+  // ● doPostTest()
+  //======================================
+  /*
+    doPost の動作確認用関数。
+    Utilities.newBlob('XXXXX') の中身を適当に変更して使用してくださいまし。
+
+    ▼引数
+    なし
+
+    ▼戻り値
+    なし
+  */
+  //======================================
+  function doPostTest() {
+    // POSTのテスト用文字列。
+    // SSPから送信されるであろうデータ（文字列）と同じものを指定してください。
+    // 本スクリプトの場合、
+    // 「送信元;コメント;メモ の３要素を ;(半角セミコロン) で区切った文字列」
+    // を想定しています。
+    // ex) 'TEST;いいね！;HOME'
+    // 
+    // ※ v10 より、上記の「３要素が必ず含まれた文字列でないといけない」制限を撤廃し、
+    // 　 同時に要素数１～５まで受付可能なように仕様変更しました。
+    const POST_CONTENT = 'TEST'
+    
+    // たまにやらかすので、ミス防止用のチェックを入れました。
+    // 空でもエラーなく動くのですが、
+    // 動作完了しても、何も変化がない（＝スプレッドシートに記録されないし、コンソールにもエラーが出ない）のは
+    // 分かりにくくてよろしくないなあ、と思ったので…。
+    if (POST_CONTENT == '') {
+      console.error("ERROR: doPostTest() 内の POST_CONTENT が空っぽです。")
+      return;
+    }
+
+    // eを作成する…のにちょっと注意が必要でした。
+    // e.postData は FileUploadクラス（＝blobクラスを継承したクラス）なので、
+    // 面倒でもBlobでつくらないといけない（らしい）です。
+    // 
+    // 【参考】
+    // ■Google Apps ScriptのdoPostでJSONなパラメータのPOSTリクエストを受ける - Qiita
+    // https://qiita.com/shirakiya/items/db22de49f00710478cfc#json%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E3%82%92%E5%8F%97%E3%81%91parse%E3%81%99%E3%82%8B
+    let e = {
+      postData : Utilities.newBlob(POST_CONTENT)
+    };
+    
+    // postData さえ作れれば、あとは doPost に渡すだけです。
+    // これで「毎回コードを編集して、デプロイして、SSPの記述を更新されたURLに書き直して、それからテスト」
+    // …という面倒から解放されました。
+    // 
+    // ただし、
+    // 「デプロイしなければ、いくらコードを変更・保存しても、Webアプリとして呼び出した際の挙動は変わらない」ことと、
+    // 「動作確認して新規デプロイした場合は、WebアプリのURLも変わってしまう」ことを
+    // ついつい忘れがちになる点には、ご注意ください。
+    //
+    // コードを修正して、doPostTest関数での動作に問題が無いのを確認して、ふーいけたいけた…で安心していると、
+    // 「（SSP側なり何なり）外からPOSTしても動作が変わらない…なぜだ…」で悩むことになります（なりました）
+    doPost(e);
+  }
+
+  //======================================
+  // ● listupArray(target_array)
+  //======================================
+  /*
+    一次元配列の中身を表示用に整えた文字列にする関数。
+
+    ▼引数
+    ●target_array
+    対象とする配列。
+    
+    ▼戻り値
+    ●all_data ->
+     target_array[0]: TEST
+     target_array[1]: いいね！
+     target_array[2]: HOME
+    な感じで、各要素が改行された文字列が返ってきます。
+
+    本当は "target_array" 部分を "引数で渡された配列の名前" に変えたかった…のですが、
+    無名関数を使うテクニックが（自分の技術レベルでは）使えず、実装できませんでした…。
+  */
+  //======================================
+  function listupArray(target_array) {
+    // 戻り値用の変数 all_data を用意して、
+    let all_data = "";
+    
+    // 配列の長さを取得して、
+    let array_count = target_array.length;
+    
+    // all_data に全部ぶちこみます。
+    // 一応、各要素ごとに改行して見やすく…したつもりです。
+    for(let i=0; i<array_count; i++)
+    {
+      all_data += "target_array[" + String(i) + "]: " + target_array[i] + "\r\n";
+    }
+    
+    // 戻り値は、改行を入れて整形し見やすくした文字列。
+    return String(all_data);
+  }
+
+  //======================================
+  // ● checkContentTextByNGWordsList(raw_content, replace_str, del_mode)
+  //======================================
+  /*
+    特定の文字列（NGワード）が含まれている場合に、
+    その文字列部分を別の文字列で置換する or 全文削除する関数。
+    ひとまず単純に、分かりやすさ優先で作ってみました。
+
+    ※対象のシート（SHEET_NGWL）は、冒頭のグローバル変数定義から自動で取得しています。
+    　NGワードは SHEET_NGWL の「A列2行目~最終行」までの範囲にあるデータを自動的に読み込み使用します。
+    　（GASのRegExp関数で解釈される範囲での）正規表現の利用が可能です。
+
+    ▼引数
+    ●raw_content
+     NGワードでの置換を行う前の、元の文字列。
+    ●del_mode
+     動作モード指定：
+     raw_content 内に、↑の SHEET_NGWL から読み出したNGワードが含まれていた場合、
+      0 = raw_content を REPLACED_STR に置換し、全削除します。
+      1 = raw_content 内の該当する文字列部分だけ REPLACED_STR に全て置換します。
+     ※0,1以外 => *何もしません*
+    
+    ▼戻り値
+    ●processed_content ->
+     上記の置換処理が行われた後の文字列
+  */
+  //======================================
+  function checkContentTextByNGWordsList(raw_content, replace_str, del_mode) {
+    
+    // SHEET_NGWL から NGワードの一覧を読み込み。
+    // ※A2～最終行までのデータを"全て"取得しているため、空白セルも読み込んでいる点に注意。
+    let NG_words_list = SHEET_NGWL.getRange('A2:A').getValues();
+    debugPrint("NG_words_list", listupArray(NG_words_list));
+    
+    // このままだと NG_WORD_LIST に空のセルが含まれている可能性があり、
+    // 後の正規表現オブジェクト生成時に悪さをすることがある（ /(?:)/g が生成されておかしなことになる）ので除去します。
+    // 具体的には、配列を探索して空セルの位置を探し、そこまでで切り落とすことにしました。
+    const NG_WORD_LIST_COUNT = NG_words_list.length; // 配列の全個数=最終行数
+    let valid_value_pos = 0;   // 空文字が出てこない最後の位置
+
+    // 空セル（＝Stringで変換した際、空文字('')になるもの）が出てくるまで探索。
+    for (let i=0; i<NG_WORD_LIST_COUNT; i++) {
+      debugPrint("NG_words_list[" + String(i) + "]", NG_words_list[i]);
+      if (!String(NG_words_list[i])) {
+        break;
+      } 
+      valid_value_pos += 1;
+    }
+    debugPrint("valid_value_pos", valid_value_pos);
+
+    // 得られた（最初の）空セルの位置までで NG_WORD_LIST を切り落とします。
+    const NG_WORD_LIST_FILTERED = NG_words_list.slice(0, valid_value_pos);
+    debugPrint("NG_WORD_LIST_FILTERED", listupArray(NG_WORD_LIST_FILTERED));
+    
+    /*
+      【dullNekoより】
+      ↑の空セルの問題、もっとスマートな方法、例えば
+      ・空のセルをそもそも読み込まないようにする
+      ・配列のfilterメソッドでやる
+      等々をご存じの方、いらっしゃったら是非ご教示ください…
+      今の私には…理解できなかった…
+    */
+
+    // 改めて配列の全個数を取得
+    const NG_WORD_LIST_FILTERED_COUNT = NG_WORD_LIST_FILTERED.length;
+    debugPrint("NG_WORD_LIST_FILTERED_COUNT",  NG_WORD_LIST_FILTERED_COUNT);
+
+    // 戻り値を準備し、処理前の値を確認。
+    let processed_content = raw_content;
+    debugPrint("processed_content (before)", processed_content);
+
+    // NGワードリストを用いて、raw_content を del_mode に応じた動作で置換処理。
+    /*
+      【メモ】
+      変数名 = new RegExp("正規表現パターンの文字列" [, "フラグ" ]) で正規表現オブジェクト作成。
+      "正規表現パターンの文字列"に変数を使いたい場合は RegExp で指定する他なさそう。
+      フラグは g:最初の一個だけでなく全部マッチ対象にする i:大文字・小文字を区別しない m:改行の後も処理を続ける 
+      【注意】
+      パターンをRegExp関数で文字列として指定する場合は、スラッシュ(/)で囲う必要無し。
+      また、RegExp関数が自動的にエスケープしてくれるので、\/のエスケープ処理は考えなくてOKでした。
+      ※ + ? * とかは（当然ながら）そのまま正規表現として解釈されるので要注意。
+    */
+   
+    //=====================================================================
+    // del_mode == 0 の場合は、全文置換 / 一回でもマッチすれば、全文を置き換えます。
+    //=====================================================================
+    if (del_mode == 0) {
+      // 正規表現にマッチしたかどうかのチェック用フラグ
+      let test_flag = false;
+      
+      // NGワードリストを使って raw_content にNGワードが含まれるかチェックするループ
+      for (let i=0; i<NG_WORD_LIST_FILTERED_COUNT; i++) {
+        let reg_str = String(NG_WORD_LIST_FILTERED[i]);   // テスト -> 文字列
+        let reg_obj = new RegExp(reg_str, 'm');           // /テスト/m -> 正規表現オブジェクト
+        debugPrint("reg_str[" + String(i) + "]", reg_str);  
+        debugPrint("reg_obj[" + String(i) + "]", String(reg_obj));
+        
+        test_flag = reg_obj.test(raw_content);
+        debugPrint("test_flag [" + String(i) + "]", test_flag);
+      
+        // 正規表現に引っかかったら（NGワードが含まれていると分かったら）全文置換。
+        // これ以上処理する必要は無いので、ループから抜けます。
+        if (test_flag == true) {
+          processed_content = replace_str
+          break;
+        }
+      
+      }
+    //=====================================================================
+    // del_mode == 1 の場合は、部分置換 / マッチする限り、全て置換します。
+    //=====================================================================
+    } else if (del_mode == 1) {
+      // NG_WORD_LIST_FILTERD を一個づつ読み込んで、順次適用（置換）するループ
+      for (let i=0; i<NG_WORD_LIST_FILTERED_COUNT; i++) {
+        let reg_str = String(NG_WORD_LIST_FILTERED[i]);   // テスト -> 文字列
+        let reg_obj = new RegExp(reg_str, 'gm');          // /テスト/gm -> 正規表現オブジェクト
+        debugPrint("reg_str[" + String(i) + "]", reg_str);  
+        debugPrint("reg_obj[" + String(i) + "]", String(reg_obj));
+
+        processed_content = processed_content.replace(reg_obj, replace_str);
+      }
+    //=====================================================================
+    // del_mode == 0,1 以外の場合は…何もしません。設定ミスにご注意ください。
+    //=====================================================================
+    } else {
+      // *nothing to do*
+    }  
+
+    // 処理済みの文字列を返して終了。
+    debugPrint("processed_content (after)", processed_content);
+    return processed_content;
+  }
+
+  //========================================================
+  // 【※試作版です、使用注意！】
+  // ● tootByMastodonAPI(toot_content)
+  //========================================================
+  /*
+    Mastodon の API 経由でトゥート投稿を行う関数（試作版）。
+    HTTPリクエストを受けた後、さらにGASの外にHTTPリクエストを送ることもできます、の一例です。
+
+    他のAPIを叩く場合、
+    ユーザさんからは見えないように管理しなければならない【アクセストークン】を、
+    こうやってGASを間にかませることで隠蔽することができます…という例でもあります。
+
+   ※ UrlFetchApp.fetch があるため「外部サービスへの接続」許可が必要になります。
+    
+    ＜！警告！＞
+    他所のサーバにアクセスする（＆場合によってはDoS攻撃じみたアクセス数になる可能性がある）関係上、
+    セーフティとして、プロパティサービスを利用するようにしてあります。
+    冒頭の
+    ★ 機密情報（APIキー等）を保管するプロパティサービスのススメ
+    を読むなどして、プロパティサービスの利用方法を理解し、
+    さらにGASの制約（アクセス元情報を取得できない、対象サーバから見たアクセス元は自分になる等）を、
+    きちんと把握して、注意してお使い下さいませ。
+    
+    【事前準備】
+    Mastodonの「ユーザー設定」画面から「開発」->「新規アプリ」と進み、
+    「アプリの名前」に "API Test" など適当な名前を入力、
+    他の情報（権限等の設定）はそのままで送信ボタンを押してアプリを登録し、
+    生成されたアプリ名をクリックすると出てくる「アクセストークン」を使用する必要があります。
+
+    【参考】
+    ■Atsushi's Homepage 〜 Mastodon API を使ってみる
+    https://www.antun.net/tips/api/mastodon.html
+    ■Google Apps Scriptを利用してWeb APIを取得する方法を試してみた | DevelopersIO
+    https://dev.classmethod.jp/articles/google-apps-script-request/
+
+    【アイデア元】
+    ■Donさんのトゥート
+    https://ukadon.shillest.net/@nikolat/109520818205515491
+    
+    ▼使い方
+    1) 上記「事前準備」の手順で、アクセストークンを発行し控えておく。
+    2) プロパティサービスに API_KEY_MASTODON を作成、APIキーを値として保存しておく。
+    3) res_mastodon = tootMastodon('トゥートしたい内容'); の形で呼び出す。
+    4) 必要なら戻り値 res_mastodon(reponse_code) を利用して後処理。
+    
+    ▼引数
+    ●toot_content
+     トゥートする内容。
+    
+    ▼戻り値
+    ●-1 ->
+     API_KEY_MASTODON がプロパティに存在していない場合の戻り値。
+    ●reponse_code ->
+     HTTP通信のレスポンスコード、正常終了していれば 200 が返ってきます。
+  */
+  //========================================================
+  function tootByMastodonAPI(toot_content) {
+    
+    //=======================================================
+    // トゥート先のURL文字列(MASTODON_URL)の作成
+    //=======================================================
+    // "https://【サーバ名】/api/v1/statuses?access_token=【アクセストークン】"の形にする必要があります。
+
+    // 【アクセストークン】の読込
+    // セーフティとしてプロパティサービスを使う用にしてあります。
+    // 使用する場合は、冒頭の参考情報にある
+    // ★ 機密情報（APIキー等）を保管するプロパティサービスのススメ
+    // を一読し、ご自身でプロパティに API_KEY_MASTODON を設定してくださいませ。
+    const API_KEY_MASTODON = PropertiesService.getScriptProperties().getProperty("API_KEY_MASTODON");
+
+    // APIキーの存在チェック：
+    // ※あくまで「 null（＝存在しない）かどうか 」のチェックだけです。
+    // 「キーが正しいかどうか」はチェックしていません。
+    // 通信の成否は、ステータスコードで判断くださいませ。
+    if (API_KEY_MASTODON === null) {
+      return -1;
+    } 
+
+    // トゥート先のURL
+    // https://【サーバ名】/api/v1/statuses?access_token= の形で記述してくださいまし。
+    const MASTODON_URL = "https://ukadon.shillest.net/api/v1/statuses?access_token=" + API_KEY_MASTODON;
+
+    //=======================================================
+    // 実際にPOSTするデータ (リクエストヘッダ 並びに payload(BODY) 部分）の指定
+    //=======================================================
+    /*
+      status=... の部分だけでもトゥートはできるらしいのですが、
+      &visibility=unlisted (未収載) を指定しておくと、
+      他の人のタイムラインを汚染しないですむ（らしい）ので、入れてあります。
+     
+     【参考】
+      ■Atsushi's Homepage 〜 Mastodon API を使ってみる
+      https://www.antun.net/tips/api/mastodon.html
+      ■Mastodon API から「未収載」でトゥートするサンプル（bash と PHP） - Qiita
+      https://qiita.com/KEINOS/items/27d201afed4ed665cb11
+    */
+    let options = {
+      'method'  : 'post',
+      'payload' : "status="+encodeURIComponent(toot_content)+"&visibility=unlisted"
+    }
+  
+    //=======================================================
+    // POST実行。
+    //=======================================================
+    let response_mastodon = UrlFetchApp.fetch(MASTODON_URL, options);
+    
+    //=======================================================
+    // 戻り値検証。
+    //=======================================================
+    let reponse_code = response_mastodon.getResponseCode(); // 何も問題なければ 200 が返ってきます。
+    debugPrint("reponse_code (Mastodon)", reponse_code);
+    let reponse_text = response_mastodon.getContentText();  // けっこういろいろ情報が入っている…のですが、私には使い道が分からぬ…
+    debugPrint("reponse_text (Mastodon)", reponse_text);
+
+    //=======================================================
+    // レスポンスコードを返して終了。
+    //=======================================================
+    return reponse_code;
+  
+  }
+
+  //======================================
+  // ● sendMailAlert(count)
+  //======================================
+  /*
+   スクリプトプロパティから key: "EMAIL_ADDRESS" を読み込み、
+   これを送信先メールアドレスとして、引数で与えた新着件数を添えてメールで通知する関数。
+   
+   ※ GmailApp.sendEmail があるため Gmail へのアクセス許可が必要になります。
+  
+   【参考】
+   【MailAppとGmailApp】GASを使って簡単にメールを送信する方法 | まいふぁんず
+    https://my-funs.com/gas-mailapp/
+
+   ▼引数
+   ●count
+    新着件数 {(今日の行数カウント-1) - 前日の行数カウント記録値}
+
+   ▼戻り値
+    0: 正常終了
+   -1: メールが送信できなかった
+  */
+  //======================================
+  function sendMailAlert(count) {
+
+    // テスト送信時用の処理：count が undefined の場合は TEST として処理
+    if (count === undefined) {
+      count = 'TEST';
+    }
+
+    // 送信先メールアドレスをプロパティサービスから取得
+    // 先に initPropertyValues() の実行をしていない、
+    // GUI からの設定で EMAIL_ADDRESS を設定していない、
+    // あるいは誤ったメールアドレスを登録している場合、
+    // Exception: Invalid email: * が出て送信失敗します。
+    const EMAIL_ADDRESS = PropertiesService.getScriptProperties().getProperty("EMAIL_ADDRESS");
+
+    // 本文
+    let body = 
+      "WebClapModoki-GAS にコメントがありました。\r\n"
+    + "新着件数：" + String(count) + " 件";
+
+    // 送信者の名前
+    let sender  = "WebClapModoki-GAS sendMailAlert";
+
+    // メールの件名
+    let subject = 
+    "WebClapModoki-GAS にコメントがありました 新着件数：" + String(count) + " 件";
+
+    // オプション
+    let option = {
+      name : sender // 差出人名
+    }
+
+    // メールの送信処理
+    try {
+      // GmailApp.sendEmail(recipient, subject, body, option)
+      GmailApp.sendEmail(EMAIL_ADDRESS, subject, body, option);
+    }
+    catch (e) {
+      // 発生しうる例外は、基本的に記述したメールアドレスに送達できなかったパターン
+      // （＝ Exception: Invalid email: *** ）の筈…ですが、
+      // 一応、他の例外も catch して表示するようにしました。
+      console.error("ERROR: " + String(e));
+      return -1
+    }
+
+    // 正常終了時
+    return 0;
+  }
+
+  //======================================
+  // ● dailyCheckTotalCounts_v2()
+  //======================================
+  /*
+   所定のシートの今日の行数をチェックし、
+   記録されていた前日の行数と比較して、
+   今日の行数 > 前日の行数 であった場合は「投稿があった」と判定し、
+   sendMailAlert 関数を使ってメールで通知する関数。
+
+   ・GmailApp.sendEmail を使うため Gmail の読み書き権限が要求されること、
+   ・スクリプトプロパティに key: ROWS_COUNT を事前設置しなければならないこと、
+   ・スクリプトプロパティの値が文字列型なので、毎回数値への変換が必要なこと、
+   ・貴重なスクリプトプロパティの枠を使うこと（一応、GUIから表示できる数は50あるけど…）
+   あたりが問題点。
+
+   ▼引数
+    なし
+
+   ▼戻り値
+    なし
+  */
+  //======================================
+  function dailyCheckTotalCounts_v2() {
+    // GmailApp.sendEmail のレスポンス用
+    let GmailRes = "unsent"
+    // スクリプトプロパティ オブジェクト (ScriptProperties型) 
+    let scriptProperties = PropertiesService.getScriptProperties();
+
+    // 今日のコメント記録シートの行数を取得（※先頭行の１行分差し引いた行数にしておく）
+    let rowsResponseSheet = SHEET_COMMENT.getLastRow() - 1;
+    // 前日のコメント記録シートの行数を取得
+    // スクリプトプロパティの値は常に文字列になるので、読込時は数値に戻す必要あり。
+    let rowsResponseSheetPrev = Number(scriptProperties.getProperty('ROWS_COUNT'));
+
+    // initPropertyValues 関数を実行していない場合
+    // (= scriptProperties.getProperty('ROWS_COUNT') が null の場合)は、一旦停止
+    //console.log(scriptProperties.getProperty('ROWS_COUNT'));
+    if (scriptProperties.getProperty('ROWS_COUNT') === null) {
+      console.error("ERROR: プロパティサービスに ROWS_COUNT が存在しません。");
+      console.error("先に initPropertyValues 関数を実行し、ROWS_COUNT および EMAIL_ADDRESS を作成して下さい。")
+      console.error("その後、画面←の歯車アイコン（プロジェクトの設定）をクリックし、\r\n"
+                  + "呼び出した画面の一番↓にある プロパティ サービス から EMAIL_ADDRESS (送信先メールアドレス) を正しく設定し直して下さい。");
+      return;
+    }
+    
+    // デバッグ用チェック
+    // テンプレート文字列 ${val} を使う際は `(バッククォート) でないといけない点に注意。
+    console.log(`前日のコメント数: ${rowsResponseSheetPrev}`);
+    console.log(`今日のコメント数: ${rowsResponseSheet}`);
+    
+    // 今日と前日の件数を比較し、今日の方が多ければ、値を更新した上でメールを送信。
+    // スクリプト プロパティへの書込時は文字列にしておかないといけない点に注意。
+    if (rowsResponseSheet > rowsResponseSheetPrev) {
+      scriptProperties.setProperty('ROWS_COUNT', String(rowsResponseSheet));
+      GmailRes = sendMailAlert(rowsResponseSheet - rowsResponseSheetPrev);
+    }
+    // 前日と同じ件数なら、何もしません。
+    
+    // デバッグ用チェック
+    console.log("sendMailAlert(count) のレスポンス: " + String(GmailRes));
+    
+    // 終了
+    return;
+  }
+
+  //======================================
+  // ● sendDiscordWebHook(post_content)
+  //======================================
+  /*
+   スクリプトプロパティから key: "DISCORD_WEBHOOK_URL" を読み込み、
+   これを送信先の Discord webhook URL として、
+   引数で与えた post_content の内容を送り付ける関数。
+   
+   ※ UrlFetchApp.fetch があるため「外部サービスへの接続」許可が必要になります。
+  
+    ＜！警告！＞
+    他所のサーバにアクセスする（＆場合によってはDoS攻撃じみたアクセス数になる可能性がある）関係上、
+    セーフティとして、プロパティサービスを利用するようにしてあります。
+    冒頭の
+    ★ 機密情報（APIキー等）を保管するプロパティサービスのススメ
+    を読むなどして、プロパティサービスの利用方法を理解し、
+    さらにGASの制約（アクセス元情報を取得できない、対象サーバから見たアクセス元は自分になる等）を、
+    きちんと把握して、注意してお使い下さいませ。
+    
+    【事前準備】
+    
+
+    【参考】
+    ■ Intro to Webhooks – Discord
+    https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks
+    ■ DiscordにWebhookでいろいろ投稿する - Qiita
+    https://qiita.com/Eai/items/1165d08dce9f183eac74
+
+    ▼使い方
+    1) initPropertyValues() を実行して DISCORD_WEBHOOK_URL をプロパティサービスに新規作成。
+    2) DISCORD_WEBHOOK_URL の値を、予めDiscord側で発行した
+       https://discordapp.com/api/webhooks/***
+       の URL を貼り付けて変更しておく。
+       ※英語ですが、
+       ■ Intro to Webhooks – Discord の Making a Webhook
+       https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks
+       の手順で発行できます。
+       画像、というか画面構成は同じなので、そう難しくはない…はず。
+    3) res_discord = sendDiscordWebHook('送信したい内容'); の形で呼び出す。
+    4) 必要なら戻り値 res_discord(reponse_code) を利用して後処理。
+    
+    ▼引数
+    ●post_content
+     Discord に投稿したい内容。
+     基本的には、投稿された一行コメントをそのまま横流しすることを想定しています。
+    
+    ▼戻り値
+    ●-1 ->
+     DISCORD_WEBHOOK_URL がプロパティに存在していない場合の戻り値。
+    ●reponse_code ->
+     HTTP通信のレスポンスコード、正常終了していれば 200 が返ってきます。
+  */
+  //======================================
+  function sendDiscordWebHook(post_content) {
+    
+    //=======================================================
+    // Discord webhook URL の読込
+    //=======================================================
+    // https://discordapp.com/api/webhooks/*** の形で登録をお願いいたします。
+    const DISCORD_WEBHOOK_URL = PropertiesService.getScriptProperties().getProperty("DISCORD_WEBHOOK_URL");
+
+    // DISCORD_WEBHOOK_URL の存在チェック：
+    // ※あくまで「 null（＝存在しない）かどうか 」のチェックだけです。
+    // 「URLが正しいかどうか」はチェックしていません。
+    // 通信の成否は、ステータスコードで判断くださいませ。
+    if (DISCORD_WEBHOOK_URL === null) {
+      return -1;
+    } 
+
+    //=======================================================
+    // 実際にPOSTするデータ (リクエストヘッダ 並びに payload(BODY) 部分）の指定
+    //=======================================================
+    let options = {
+      "method"  : "post",
+      "contentType" : "application/json",
+      "payload" : JSON.stringify(
+        {
+          "content" : post_content
+        }
+      )
+    }
+
+    //=======================================================
+    // POST実行。
+    //=======================================================
+    let response_discord = UrlFetchApp.fetch(DISCORD_WEBHOOK_URL, options);
+    
+    //=======================================================
+    // 戻り値検証。
+    //=======================================================
+    let reponse_code = response_discord.getResponseCode(); // 何も問題なければ 204 No Content が返ってきます。
+    debugPrint("reponse_code (discord)", reponse_code);
+    //console.log(`reponse_code (discord): ${reponse_code}`);
+    //let reponse_text = response_discord.getContentText();  // discord の場合、204 なので、こっちは空っぽ。
+    //debugPrint("reponse_text (discord)", reponse_text);
+    //console.log(`reponse_text (discord): ${reponse_text}`);
+
+    //=======================================================
+    // レスポンスコードを返して終了。
+    //=======================================================
+    return reponse_code;
+  }
+
+
+//============================================================================================
+// ★ Google Apps Script の標準関数群
+//============================================================================================
+
+  //=======================================================
+  // ● doPost(e)
+  //=======================================================
+  /*
+    Post メソッドでリクエストされた時に起動する、GASの標準関数。
+    下記のステップを実装してあります。
+
+    1) ◆ 処理対象スプレッドシートの存在確認
+    2) ◆ 【デバッグ用】SHEET_DEBUG の初期化
+    3) ◆ Post されたデータの中身を文字列として取得し、加工する処理
+    4) ◆ 加工し終わった後の配列から、各パラメータを取り出す処理
+    5) ◆ コメントからNGワードを除去する処理
+    6) ◆ 得られた各パラメータと、GAS側の日時を合わせてシート（SHEET_COMMENT）に記録する処理
+    7) ◆ 外部（WebHookなど）に投げる content を用意する
+    8) ◆ ついでに Mastodon にトゥートしてみる処理 ※←はデフォルトでは無効化してあります。
+    9) ◆ ついでに Discord WebHook URL に投げてみる処理
+   10) ◆ 終了処理
+  */
+  //=======================================================
+  function doPost(e) {
+
+    //=====================================================
+    // ◆ 処理対象スプレッドシートの存在確認
+    //=====================================================
+  /*
+    // doPostTest から呼んだ場合は console.log も普通に使えました。
+    console.log("SPREADSHEET: ");
+    console.log(SPREADSHEET);
+    console.log("SHEET_DEBUG: ");
+    console.log(SHEET_DEBUG);
+    console.log("SHEET_COMMENT: ");
+    console.log(SHEET_COMMENT);
+    console.log("SHEET_NGWL: ");
+    console.log(SHEET_NGWL);
+  */
+    // SPREADSHEET が存在しない場合は、そもそも
+    // Exception: Unexpected error while getting the method or property openById on object SpreadsheetApp.
+    // で止まるみたいです…が、いちおう入れてみる。
+    if (!SPREADSHEET) {
+      console.log("ERROR: SPREADSHEET_ID maybe wrong.");
+      return;
+    }
+    // 「スプレッドシートは存在しているが、その中に指定した名前のシートが存在しない」場合は厄介でした。
+    // 「特にエラーも出ず、最後までスクリプトは走るが、肝心の記録ができてない」状態に陥るので、
+    // どこがおかしいのか悩むパターンになりそうです…
+    // なので、ここで蹴っておくことにしました。
+    if (SHEET_DEBUG === null) {
+      console.log("ERROR: SHEET_NAME_DEBUG is wrong or that sheet does NOT exist.");    
+      return;
+    }
+    if (SHEET_COMMENT === null) {
+      console.log("ERROR: SHEET_NAME_COMMENT is wrong or that sheet does NOT exist.");    
+      return;
+    }
+    if (SHEET_NGWL === null) {
+      console.log("ERROR: SHEET_NAME_NGWL is wrong or that sheet does NOT exist.");
+      return;
+    }
+
+    //=====================================================
+    // ◆ 【デバッグ用】SHEET_DEBUG の初期化
+    //=====================================================
+     // 2行目初期化。
+    debugPrintReturnCode("0");
+    // 3行目初期化。
+    debugPrintProgressCheck("0 / Initialize.")
+    // 4行目初期化。
+    debugPrint("SHEET_DEBUG.getLastRow() (before processing)", SHEET_DEBUG.getLastRow());
+    // 5行目以降がある場合、一旦削除して初期化します。
+    // 現行仕様だと、処理によっては以前の結果が残ってしまい、わかりづらくなったりするので…
+    // なお .deleteRows の第二引数は HowMany で LastPositon ではない点に要注意でした。
+    // 具体的には、
+    // 5行目から最後の行まで削除したい場合は (5, lastrow-5) にしておかないと、
+    // Exception: Those rows are out of bounds. が出てしまいます。
+    if (SHEET_DEBUG.getLastRow() > 5) {
+      SHEET_DEBUG.deleteRows(5, SHEET_DEBUG.getLastRow()-5);
+    }
+
+    //=====================================================
+    // ◆ Post されたデータを文字列として取得し、加工する処理
+    //=====================================================
+    var post_data;          // POSTで送られてきたデータを、文字列に変換したもの
+    var post_data_decorded  // post_data のデコード後の文字列
+    var post_data_replaced  // post_data_decorded の置換処理後の文字列
+
+    /*
+     【メモ】
+     e.postData.getDataAsString(); の部分、
+     GAS の doPost(e) の処理として良く見かけるコードですが、
+     実際のところ、この処理＆ここらへんの仕様周りは割と特殊なものらしい、です。
+     
+     > Content-Type: application/json を付けているものの、GAS的にはそれを見ていない(?)ようで
+     > e.postData は FileUploadクラスになっており、これはblobクラスを継承したクラス。
+     > なので、.getDataAsString()メソッドでJSON文字列を得ることができ、
+     > それをJSON.parseすることでJavaScriptのオブジェクトに変換している、ということを行っている。
+    
+     今回はSSPからJSONでPOSTする方法が思いつかなかったため、
+     文字列のまま受け取って、自前で split メソッドを使ってバラす方向で実装しました。
+     
+     【参考】
+     ■Google Apps ScriptのdoPostでJSONなパラメータのPOSTリクエストを受ける - Qiita
+     https://qiita.com/shirakiya/items/db22de49f00710478cfc
+    */
+
+    // まずは e の中身を文字列として取得。
+    post_data = e.postData.getDataAsString();
+    debugPrint("post_data", post_data);
+    debugPrintProgressCheck("step 1 / get post_data")
+    
+    // SSP の HTTP-POST から送られてきたデータはURLエンコードされているので、デコードする。
+    post_data_decorded = decodeURI(post_data);
+    debugPrint("post_data_decorded", post_data_decorded);
+    debugPrintProgressCheck("step 2 / get decoded post_data")
+
+    // 先頭についている "message_body=" を削除し、目当ての文字列だけに整形。
+    post_data_replaced = post_data_decorded.replace("message_body=", "");
+    debugPrint("post_data_replaced", post_data_replaced);
+    debugPrintProgressCheck("step 3 / get replaced post_data")
+
+    // split メソッドで、適当な区切り文字を使って整形済み文字列を切り分けます。
+    // 「本スクリプトでは ";" が区切り文字であることが前提である」ことと、
+    // 「split メソッドで分割後の post_data_splitted は 文字列 → "配列" に変わっている」点に注意してくださいまし。
+    post_data_splitted = post_data_replaced.split(";")
+    debugPrint("post_data_splitted", listupArray(post_data_splitted));
+    debugPrintProgressCheck("step 4 / get splitted post_data")
+
+    //=====================================================
+    // ◆ 加工し終わった後の配列から、各パラメータを取り出す処理
+    //=====================================================
+    /*
+     【メモ】
+      JavaScript では配列の要素外にアクセスしても Undefined がセットされ、
+      ArrayIndexOutOfBoundsException の様な例外で止まったりはせず、
+      さらには undefined なデータを取り扱っても、null と違ってエラーで止まったりしない…みたいなので、
+      要素数を１～５個まで可変できるよう、設計変更してみました。
+     
+      …といっても、
+      ・配列の要素数チェックを撤廃。
+       → 要素数を超える要素を参照しても、単に undefined が入るだけで、
+       　 しかも undefined な値を .appendRow メソッドで取り扱っても何の問題もない（単に空白セルになるだけ）
+      ・上限は５個までにして、それ以上は読まない。
+       → 処理負荷との兼ね合いと、そこまで要素を分割する必要性があるか、を考えた結果、
+       　 決め打ちで要素を取得するようにしただけ、です。
+    */
+
+    var sender     = post_data_splitted[0];  // 送信元
+    var comment    = post_data_splitted[1];  // 送信内容（コメント本文）
+    var memo       = post_data_splitted[2];  // その他メモ欄
+    var add_info_1 = post_data_splitted[3];  // その他追加情報１
+    var add_info_2 = post_data_splitted[4];  // その他追加情報２
+    
+    debugPrint("sender",      sender);
+    debugPrint("comment",     comment);
+    debugPrint("memo",        memo);
+    debugPrint("add_info_1",  add_info_1);
+    debugPrint("add_info_2",  add_info_2);
+
+    debugPrintProgressCheck("step 6 / get each parameter from spllited text array.");
+    
+    //=====================================================
+    // ◆ コメントからNGワードを除去する処理
+    //=====================================================
+    /*
+      もし、NGワードを含むようなリクエストが大量に送付されるような事態が起こった場合、
+      スプレッドシートへ追加しないのも一手と思います。
+      冒頭の「セルから値を取得・書込を行う関数」の使用上限、
+      最大 50,000回/日 の制限を消費してしまうので…
+      
+      冒頭の参考情報でも述べた通り、
+      それより先にトリガー制限（時間上限）に引っかかる可能性もありますが…
+    */
+    
+    // NGワードを置換する文字列の指定。
+    // 【注意】
+    // NGワード置換処理中で正規表現を利用する関係上、
+    // * + ? 等、正規表現で特別な意味を持つ文字を REPLACE_STR に入れると誤動作の原因になります。
+    // その系統の文字列を使いたいなら、全角文字を使うのが無難かもです。
+    const REPLACE_STR = "【NG】";
+    
+    // NGワード置換処理
+    // 0 = 全文を REPLACE_STR に置換します。
+    // 1 = 該当部分だけ REPLACE_STR に置換して、他の文章は残します。
+    // ※0,1以外 => *何もしません*
+    
+    // v10 の仕様変更以降、
+    // 場合によってはコメントが空っぽ（=undefined）になってる可能性が出てきたので、
+    // 「comment が undefined の場合は何も処理しない」ように変更しました。
+    if (comment === undefined) {
+      // nothing to do.
+    } else {
+      comment = checkContentTextByNGWordsList(comment, REPLACE_STR, 1);
+    }
+    
+    // スプレッドシートへの追加をせず、ここで処理を止めたい場合は、以下のコメントアウトを解除して下さい。
+  /*
+    let reg_obj_NG = new RegExp(REPLACE_STR, 'i');
+    let test_flag_NG = reg_obj_NG.test(comment);
+    debugPrint("reg_obj_NG", String(reg_obj_NG));
+    debugPrint("test_flag_NG", String(test_flag_NG));
+    if (test_flag_NG == true) {
+      debugPrintReturnCode("500");
+      debugPrintProgressCheck("ERROR / comment contains NG word.");
+      return;
+    }
+  */
+
+    //=====================================================
+    // ◆ 得られた各パラメータと、GAS側の日時を合わせてシート（SHEET_COMMENT）に記録する処理
+    //=====================================================
+    /*
+      時系列順にソートしやすくするため、
+      GAS 側の DateTime を取得し、これを先頭列に入れます。
+      let GAS_Date_Time = new Date();
+      でもいいのですが、
+      これを文字列表示すると Wed Jan 18 2023 21:37:41 GMT+0900 (Japan Standard Time) で、
+      個人的にあんまり馴染みのない表記になっちゃう…ので、↓の通りフォーマットした日時にしました。
+      ご覧の通り、JST (=GMT+0900) を明示して指定しているので、日本時間専用になっちゃってます…が、
+      この日本語コメントだらけのスクリプトを使うのは日本の方だけだと思うので、とりあえず良しとしました。
+     
+      【参考】
+      ■ GAS: new Date() したらアメリカ時間っぽいので日本時間で format する方法 | こーでぃーもーる
+      https://www.codeemall.info/posts/gas-date-format/
+    */
+    let GAS_Date_Time = Utilities.formatDate(new Date(), 'JST', "yyyy/MM/dd HH:mm:ss");
+
+    // 書き込み用配列の準備。
+    let appendRowArray = [GAS_Date_Time, sender, comment, memo, add_info_1, add_info_2]
+
+    /*
+      appendRowArray 内の undefined は削り、余計な列の追加が起こらないようにします。
+      ここは…「引数に渡された関数内で、trueを返す要素を新しい配列にして返却する」 .filter メソッドを使って、
+      あるいは V8 ランタイムを使える環境なら "undefined でないもの" を返すアロー関数で記述するのが一番スマート…
+      なのは間違いないと思うのですけれど、
+      まだ慣れてないので通常の記法（無名関数での記述）も併記してあります…。
+    
+      【参考】
+      ■ 【GAS】アロー関数を使いこなす – はじりつ
+      https://hajiritsu.com/gas-use-arrow-functions/
+    */
+    // アロー関数を使った記述
+    var appendRowArray_ext = appendRowArray.filter(appendRowArray => appendRowArray !== undefined);
+  
+    /*
+    // 通常記法（無名関数を使った記述）
+    var appendRowArray_ext = appendRowArray.filter(
+      function (appendRowArray) {
+        return appendRowArray !== undefined;
+      }
+    );
+    */
+
+    debugPrint("appendRowArray",      listupArray(appendRowArray));
+    debugPrint("appendRowArray_ext",  listupArray(appendRowArray_ext));
+    //console.log(listupArray(appendRowArray));
+    //console.log(listupArray(appendRowArray_ext));
+   
+    // ここまでの処理で得られた値を追記。
+    // 行を一括追加する場合、setValuesメソッドよりappendRowメソッドの方が楽でした。
+    SHEET_COMMENT.appendRow(appendRowArray_ext);
+
+    //=====================================================
+    // ◆ 外部（WebHookなど）に投げる content を用意する
+    // 　 全角スペースだと、タブ文字使わなくても文字位置が揃って良い感じだったので採用してます…
+    //=====================================================
+    let content = (
+        "★ Web拍手もどきにコメント送信がありました！ ★\r\n"
+      + "日時　　　：" + GAS_Date_Time + "\r\n"
+      + "送信元　　：" + sender  + "\r\n"
+      + "送信内容　：" + comment + "\r\n"
+      + "メモ　　　：" + memo + "\r\n"
+      + "追加情報１：" + add_info_1 + "\r\n"
+      + "追加情報２：" + add_info_2
+    );
+    // undefined があると目が滑る感じがするので、置換して消しておきます。
+    content = content.replace(/undefined/g, "");
+   //console.log(`content :\r\n ${content}`);
+
+    //=====================================================
+    // ◆ ついでに Mastodon にトゥートしてみる処理
+    //    ※実験的機能です。
+    //    　tootByMastodonAPI関数の中身を良く確認し、十分注意してご使用下さい。
+    //=====================================================
+    /*
+    let res_mastodon = tootByMastodonAPI(content);
+    debugPrint("response from mastodon API", res_mastodon);
+    //console.log(`response (mastodon): ${rres_mastodon}`);
+    */
+
+    //=====================================================
+    // ◆ ついでに Discord WebHook URL に投げてみる処理
+    //    ※実験的機能です。
+    //=====================================================
+    //let res_discord = sendDiscordWebHook(content);
+    //debugPrint("response from discord", res_discord);
+    //console.log(`response (discord): ${res_discord}`);
+    
+    //=====================================================
+    // ◆ 終了処理
+    //=====================================================
+    debugPrintProgressCheck("step final / normal end");
+    debugPrintReturnCode("200");
+    return;
+  }
+

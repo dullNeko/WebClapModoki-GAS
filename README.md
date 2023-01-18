@@ -18,6 +18,10 @@
 <!-- WebClapModoki の LICENSE -->
 [LICENSE]: /LICENSE.md
 
+<!-- Figure 0_0 / スクリプトプロパティの設定変更時の注意（保存を忘れずに！） -->
+[Fig_0_0]: /files/Figure0_0.png
+<!-- Figure 0_1 / トリガー条件設定例 -->
+[Fig_0_1]: /files/Figure0_1.png
 <!-- Figure 1 / 動作イメージ-->
 [Fig_1]: /files/Figure1_v2.gif
 <!-- Figure 2 / 動作概念図-->
@@ -59,6 +63,57 @@
 WebClap-like system by using Google Apps Script & Google spreadsheet.
 
 # 更新履歴
+
+## 2023-01-18 : 記事更新、WebClapModoki-GAS_v12.txt の追加。
+
+Discord の WebHook URL を利用して通知を行う機能を追加した、
+WebClapModoki-GAS_v12.txt を追加しました。
+
+__WebClapModoki-GAS_v12.txt__ は、  
+WebClapModoki-GAS_v11.txt に、
+
+- Discord WebHook URL 経由で通知を投げる関数（sendDiscordWebHook(post_content)）
+- initPropertyValues() に DISCORD_WEBHOOK_URL, SPREADSHEET_ID の作成・確認を追加
+- doPost(e) 内の GAS_Date_Time の取得処理変更。
+- doPost(e) 内に「◆ 外部（WebHookなど）に投げる content を用意する」「◆ ついでに Discord Webhook URL に投げてみる処理」の追加
+
+の機能追加・修正を加えた __試験版__ となっております。
+
+…なんだか永遠に試験版を出すことになりそう気がしてきていますが、  
+今後も自分が欲しいと思った機能は気分次第で追加していきますので、  
+何卒よろしくお願い申し上げます。
+
+ついで…と申し上げては何ですが、  
+__２点ほど、設定で分かりづらそうな所__ を、以下に画像で示しておきます。  
+自分もよく引っかかるので、備忘録です…。
+
+１つ目（Fig.0.0）は、スクリプトプロパティの設定変更時の注意です。  
+__「スクリプトプロパティの保存」ボタンのクリック__ を忘れると、  
+__せっかく設定を変更しても反映されない__ ため「なんでや…」に良くなります。
+
+![Figure0_0][Fig_0_0]
+<p align="center"><strong>
+Fig.0.0 スクリプトプロパティの設定変更時の注意点（保存を忘れると、設定変更が反映されません！）
+</strong></p>
+
+２つ目（Fig.0.1）は、メール通知用関数（dailyCheckTotalCounts_v2）を、  
+「トリガー」機能で定期的に実行する際の設定例です。  
+
+注意点としては…  
+__実行するデプロイを「Head」にしておくと、常に最新のデプロイ版が実行される__ 点でしょうか。  
+__「更新する度にトリガ設定を（忘れずに）弄る」のはとても面倒__ なので、  
+__基本的には Head にしておく__ ことを薦めたい…のですが、  
+バグ等があった場合にも気にせず実行してしまう、という欠点もあります。  
+
+画像の設定なら、一日一回（２４時～２５時の間のどこか）の実行頻度なので、  
+気にするほどではないと思いますが…念のため申し添えておきます。
+
+
+![Figure0_1][Fig_0_1]
+<p align="center"><strong>
+Fig.0.1 メール通知用関数の、トリガ条件設定例
+</strong></p>
+
 
 ## 2023-01-17 : 記事更新、WebClapModoki-GAS_v11.txt の追加。
 
@@ -111,15 +166,14 @@ __「こうしたらURL不変で運用できます」__ な説明セクション
 
 ## 2022-12-27 : 記事更新、WebClapModoki-GAS_v10.txt の追加。
 
-__WebClapModoki-GAS_v10.txt__ は、
-WebClapModoki-GAS.txt (v9) から、
-てにてにさんのツイートを参考に、
-（送信元）１つだけ～
-（送信元）;（コメント）;（メモ）;（追加情報１）;（追加情報２）
-の５つまで、
-__データを可変で受け取れるようにした版__ です。
+__WebClapModoki-GAS_v10.txt__ は、  
+WebClapModoki-GAS.txt (v9) から、  
+てにてにさんのツイートを参考にして、  
+（送信元）１つだけ～  
+（送信元）;（コメント）;（メモ）;（追加情報１）;（追加情報２）  
+の５つまで、 __データを可変で受け取れるようにした版__ です。
 
-__POSTする側での縛り（＝（送信元）;（コメント）;（メモ）の形でないと受け付けない）が無くなっただけ__ なので、
+__POSTする側での縛り（＝（送信元）;（コメント）;（メモ）の形でないと受け付けない）が無くなっただけ__ なので、  
 __導入手順自体は、記事通りでOK__ です。
 
 ## 2022/12/25 : 記事公開。WebClapModoki-GAS.txt (v9) リリース。
