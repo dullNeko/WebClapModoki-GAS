@@ -45,8 +45,8 @@
                     並びに SPREADSHEET_ID をプロパティサービスから読む記述を追加。
                     
                     ただし、SPREADSHEET_ID をプロパティサービスから読みこむ処理に切り替える場合は、
-                    ●手動での key: SPREADSHEET_ID のプロパティサービスへの登録を行った上で、
-                    ●並びに記述のコメントアウトの切り替え、すなわち
+                    ● 手動での key: SPREADSHEET_ID のプロパティサービスへの登録を行った上で、
+                    ● 並びに記述のコメントアウトの切り替え、すなわち
                     const SPREADSHEET_ID = "***";
                     //const SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
                     から
@@ -60,9 +60,9 @@
                     △ dailyCheckTotalCounts_v2() 関数の実装。
                     
                     メール通知機能を実際に利用するには、
-                    ●プロパティ サービス の設定（EMAIL_ADDRESS, ROWS_COUNT の２つ）
-                    ●トリガー機能による定期的な関数の実行（dailyCheckTotalCounts_v2 の実行）
-                    ●Gmailへのアクセス許可の付与（「Gmailアカウントの操作」「本人に代わってのメール送信」の２権限）
+                    ● プロパティ サービス の設定（EMAIL_ADDRESS, ROWS_COUNT の２つ）
+                    ● トリガー機能による定期的な関数の実行（dailyCheckTotalCounts_v2 の実行）
+                    ● Gmailへのアクセス許可の付与（「Gmailアカウントの操作」「本人に代わってのメール送信」の２権限）
                     が必要です。
                     具体的な手順は、下の (1)-(5) を参照くださいまし。
                     
@@ -1224,7 +1224,7 @@
 
    ▼引数
    ●count
-    新着件数 {(今日の行数カウント-1) - 前日の行数カウント記録値}
+    新着件数 {(今回の行数カウント-1) - 前回の行数カウント記録値}
 
    ▼戻り値
     0: 正常終了
@@ -1283,9 +1283,9 @@
   // ● dailyCheckTotalCounts_v2()
   //======================================
   /*
-   所定のシートの今日の行数をチェックし、
-   記録されていた前日の行数と比較して、
-   今日の行数 > 前日の行数 であった場合は「投稿があった」と判定し、
+   所定のシートの今回の総行数をチェックし、
+   記録されていた前回の総行数と比較して、
+   今回の総行数 > 前回の総行数 であった場合は「投稿があった」と判定し、
    sendMailAlert 関数を使ってメールで通知する関数。
 
    ・GmailApp.sendEmail を使うため Gmail の読み書き権限が要求されること、
@@ -1307,9 +1307,9 @@
     // スクリプトプロパティ オブジェクト (ScriptProperties型) 
     let scriptProperties = PropertiesService.getScriptProperties();
 
-    // 今日のコメント記録シートの行数を取得（※先頭行の１行分差し引いた行数にしておく）
+    // 今回のコメント記録シートの行数を取得（※先頭行の１行分差し引いた行数にしておく）
     let rowsResponseSheet = SHEET_COMMENT.getLastRow() - 1;
-    // 前日のコメント記録シートの行数を取得
+    // 前回のコメント記録シートの行数を取得
     // スクリプトプロパティの値は常に文字列になるので、読込時は数値に戻す必要あり。
     let rowsResponseSheetPrev = Number(scriptProperties.getProperty('ROWS_COUNT'));
 
@@ -1326,16 +1326,16 @@
     
     // デバッグ用チェック
     // テンプレート文字列 ${val} を使う際は `(バッククォート) でないといけない点に注意。
-    console.log(`前日のコメント数: ${rowsResponseSheetPrev}`);
-    console.log(`今日のコメント数: ${rowsResponseSheet}`);
+    console.log(`前回の総行数: ${rowsResponseSheetPrev}`);
+    console.log(`今回の総行数: ${rowsResponseSheet}`);
     
-    // 今日と前日の件数を比較し、今日の方が多ければ、値を更新した上でメールを送信。
+    // 今回と前回の件数を比較し、今回の方が多ければ、記録値を更新した上でメールを送信。
     // スクリプト プロパティへの書込時は文字列にしておかないといけない点に注意。
     if (rowsResponseSheet > rowsResponseSheetPrev) {
       scriptProperties.setProperty('ROWS_COUNT', String(rowsResponseSheet));
       GmailRes = sendMailAlert(rowsResponseSheet - rowsResponseSheetPrev);
     }
-    // 前日と同じ件数なら、何もしません。
+    // 前回記録値と今回が同じ件数なら、何もしません。
     
     // デバッグ用チェック
     console.log("sendMailAlert(count) のレスポンス: " + String(GmailRes));
@@ -1394,7 +1394,7 @@
     ●-1 ->
      DISCORD_WEBHOOK_URL がプロパティに存在していない場合の戻り値。
     ●reponse_code ->
-     HTTP通信のレスポンスコード、正常終了していれば 200 が返ってきます。
+     HTTP通信のレスポンスコード、正常終了していれば 204 (No Content) が返ってきます。
   */
   //======================================
   function sendDiscordWebHook(post_content) {
@@ -1720,7 +1720,7 @@
         "★ Web拍手もどきにコメント送信がありました！ ★\r\n"
       + "日時　　　：" + GAS_Date_Time + "\r\n"
       + "送信元　　：" + sender  + "\r\n"
-      + "送信内容　：" + comment + "\r\n"
+      + "送信内容　：" + comment + "\r\n"
       + "メモ　　　：" + memo + "\r\n"
       + "追加情報１：" + add_info_1 + "\r\n"
       + "追加情報２：" + add_info_2
